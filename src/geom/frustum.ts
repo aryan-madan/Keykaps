@@ -10,13 +10,18 @@ export function frustum(width: number, depth: number, row: number) {
   const idx: number[] = []
   const top: number[][] = []
 
+  const marginX = 1 - p.taper
+  const marginZ = 1 - p.taper
+  const topWidth = Math.max(0.1, width - marginX)
+  const topDepth = Math.max(0.1, depth - marginZ)
+
   for (let iz = 0; iz <= grid; iz++) {
     const line: number[] = []
     for (let ix = 0; ix <= grid; ix++) {
       const u = ix / grid - 0.5
       const v = iz / grid - 0.5
-      const x = u * width * p.taper
-      const z = v * depth * p.taper + p.height * p.tilt
+      const x = u * topWidth
+      const z = v * topDepth + p.height * p.tilt
       const y = p.height - dish(v, p.dish)
       line.push(pos.length / 3)
       pos.push(x, y, z)
