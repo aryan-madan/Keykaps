@@ -1,5 +1,5 @@
 import { Canvas } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import { useBoard } from '../store/board'
 import { bound } from '../layout/bound'
 import { center } from '../layout/center'
@@ -10,17 +10,22 @@ export function Board() {
   const keys = useBoard((state) => state.keys)
   const box = keys.length > 0 ? bound(keys) : null
   const mid = box ? center(box) : { x: 0, z: 0 }
+
   return (
-    <Canvas camera={{ position: [0, 14, 14], fov: 40 }}>
-      <ambientLight intensity={0.6} />
-      <directionalLight position={[5, 10, 5]} intensity={0.8} />
-      <group position={[-mid.x, 0, -mid.z]}>
-        <Case />
-        {keys.map((key) => (
-          <Key key={key.id} data={key} />
-        ))}
+    <Canvas>
+      <PerspectiveCamera makeDefault position={[0, 10, 14]} fov={40} />
+      <ambientLight intensity={0.7} />
+      <directionalLight position={[5, 10, 5]} intensity={0.7} />
+      <directionalLight position={[-6, 2, 8]} intensity={0.35} />
+      <group rotation={[0.12, 0, 0]}>
+        <group position={[-mid.x, 0, -mid.z]}>
+          <Case />
+          {keys.map((key) => (
+            <Key key={key.id} data={key} />
+          ))}
+        </group>
       </group>
-      <OrbitControls />
+      <OrbitControls target={[0, 0, 0]} />
     </Canvas>
   )
 }
