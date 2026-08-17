@@ -23,7 +23,7 @@ type Shape = {
   inset: number
   wall: number
   plate: number
-  slant: number
+  wallHeight: number
 }
 
 type Board = {
@@ -40,8 +40,8 @@ type Board = {
 
 export const useBoard = create<Board>((set) => ({
   keys: [],
-  case: '#333333',
-  shape: { pad: 0.6, inset: 0.3, wall: 0.1, plate: 1.4, slant: 0.5 },
+  case: '#e6e6e6',
+  shape: { pad: 0.3, inset: 0, wall: 0.15, plate: 1.4, wallHeight: 1.0 },
   selected: null,
   load: (keys) => set({ keys }),
   paint: (id, color) => set((state) => ({
