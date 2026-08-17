@@ -1,1 +1,6 @@
 @import "tailwindcss";
+
+@font-face {
+  font-family: 'Cherry';
+  src: url('/typeface/cherry.otf') format('opentype');
+}

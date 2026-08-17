@@ -72,32 +72,121 @@ export function Case() {
     const centerX = box.minx + (box.maxx - box.minx) / 2
     const centerZ = box.miny + (box.maxy - box.miny) / 2
 
-    // Small inset to prevent adjacent hole overlap and triangulation corruption
-    const inset = 0.03
+    const minGapThreshold = 0.25
+    const visited = new Set<number>()
+    const clusters: (typeof keys)[] = []
 
-    keys.forEach((key) => {
-      const cosR = Math.cos(key.r || 0)
-      const sinR = Math.sin(key.r || 0)
+    for (let i = 0; i < keys.length; i++) {
+      if (visited.has(i)) continue
+      const cluster = [keys[i]]
+      visited.add(i)
+      const queue = [keys[i]]
 
-      const rx = key.rx ?? key.x
-      const ry = key.ry ?? key.y
+      while (queue.length > 0) {
+        const curr = queue.shift()!
+        for (let j = 0; j < keys.length; j++) {
+          if (visited.has(j)) continue
+          const k2 = keys[j]
 
-      const points = [
-        { x: key.x + inset, y: key.y + inset },
-        { x: key.x + key.w - inset, y: key.y + inset },
-        { x: key.x + key.w - inset, y: key.y + key.h - inset },
-        { x: key.x + inset, y: key.y + key.h - inset }
-      ]
+          const dx = Math.max(0, Math.max(curr.x, k2.x) - Math.min(curr.x + curr.w, k2.x + k2.w))
+          const dy = Math.max(0, Math.max(curr.y, k2.y) - Math.min(curr.y + curr.h, k2.y + k2.h))
+
+          if (dx < minGapThreshold && dy < minGapThreshold) {
+            visited.add(j)
+            cluster.push(k2)
+            queue.push(k2)
+          }
+        }
+      }
+      clusters.push(cluster)
+    }
+
+    clusters.forEach((cluster) => {
+      const xSet = new Set<number>()
+      const ySet = new Set<number>()
+
+      cluster.forEach((k) => {
+        xSet.add(Number(k.x.toFixed(4)))
+        xSet.add(Number((k.x + k.w).toFixed(4)))
+        ySet.add(Number(k.y.toFixed(4)))
+        ySet.add(Number((k.y + k.h).toFixed(4)))
+      })
+
+      const xs = Array.from(xSet).sort((a, b) => a - b)
+      const ys = Array.from(ySet).sort((a, b) => a - b)
+
+      const ncols = xs.length - 1
+      const nrows = ys.length - 1
+      const filled: boolean[][] = Array.from({ length: nrows }, () => Array(ncols).fill(false))
+
+      for (let r = 0; r < nrows; r++) {
+        for (let c = 0; c < ncols; c++) {
+          const cx = (xs[c] + xs[c + 1]) / 2
+          const cy = (ys[r] + ys[r + 1]) / 2
+          filled[r][c] = cluster.some(
+            (k) => cx >= k.x && cx <= k.x + k.w && cy >= k.y && cy <= k.y + k.h
+          )
+        }
+      }
+
+      type Point = [number, number]
+      type Edge = { p1: Point; p2: Point; used?: boolean }
+      const edges: Edge[] = []
+
+      for (let r = 0; r < nrows; r++) {
+        for (let c = 0; c < ncols; c++) {
+          if (!filled[r][c]) continue
+
+          if (r === 0 || !filled[r - 1][c]) {
+            edges.push({ p1: [xs[c], ys[r]], p2: [xs[c + 1], ys[r]] })
+          }
+          if (c === ncols - 1 || !filled[r][c + 1]) {
+            edges.push({ p1: [xs[c + 1], ys[r]], p2: [xs[c + 1], ys[r + 1]] })
+          }
+          if (r === nrows - 1 || !filled[r + 1][c]) {
+            edges.push({ p1: [xs[c + 1], ys[r + 1]], p2: [xs[c], ys[r + 1]] })
+          }
+          if (c === 0 || !filled[r][c - 1]) {
+            edges.push({ p1: [xs[c], ys[r + 1]], p2: [xs[c], ys[r]] })
+          }
+        }
+      }
+
+      if (edges.length === 0) return
+
+      const startEdge = edges[0]
+      startEdge.used = true
+
+      const pathPoints: Point[] = [startEdge.p1, startEdge.p2]
+      let current = startEdge.p2
+
+      while (true) {
+        const nextEdge = edges.find(
+          (e) =>
+            !e.used &&
+            Math.abs(e.p1[0] - current[0]) < 1e-4 &&
+            Math.abs(e.p1[1] - current[1]) < 1e-4
+        )
+
+        if (!nextEdge) break
+        nextEdge.used = true
+        pathPoints.push(nextEdge.p2)
+        current = nextEdge.p2
+
+        if (
+          Math.abs(current[0] - pathPoints[0][0]) < 1e-4 &&
+          Math.abs(current[1] - pathPoints[0][1]) < 1e-4
+        ) {
+          break
+        }
+      }
 
       const hole = new THREE.Path()
-      points.forEach((p, idx) => {
-        const dx = p.x - rx
-        const dy = p.y - ry
-        const rotX = rx + (dx * cosR - dy * sinR) - centerX
-        const rotY = ry + (dx * sinR + dy * cosR) - centerZ
-
-        if (idx === 0) hole.moveTo(rotX, rotY)
-        else hole.lineTo(rotX, rotY)
+      pathPoints.forEach(([px, py], idx) => {
+        const hx = px - centerX
+        const hy = py - centerZ
+        if (idx === 0) hole.moveTo(hx, hy)
+        else hole.lineTo(hx, hy)
       })
       hole.closePath()
 
@@ -120,19 +209,26 @@ export function Case() {
   const x = box.minx + (box.maxx - box.minx) / 2
   const z = box.miny + (box.maxy - box.miny) / 2
 
+  const matProps = {
+    color,
+    side: THREE.DoubleSide,
+    metalness: 0.45,
+    roughness: 0.35
+  }
+
   return (
     <group position={[x, -0.15, z]}>
       <mesh geometry={wall}>
-        <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.35} />
+        <meshStandardMaterial {...matProps} />
       </mesh>
       {bottom && (
         <mesh geometry={bottom}>
-          <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.35} />
+          <meshStandardMaterial {...matProps} />
         </mesh>
       )}
       {topFrame && (
         <mesh geometry={topFrame} position={[0, topY, 0]}>
-          <meshStandardMaterial color={color} side={THREE.DoubleSide} roughness={0.35} />
+          <meshStandardMaterial {...matProps} />
         </mesh>
       )}
     </group>
