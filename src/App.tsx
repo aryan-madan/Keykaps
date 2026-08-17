@@ -1,12 +1,11 @@
 import { Board } from './scene/board'
 import { Upload } from './ui/upload'
-import './App.css'
 
 export function App() {
   return (
-    <div className="app">
+    <div className="flex h-screen flex-col bg-neutral-950">
       <Upload />
-      <div className="stage">
+      <div className="flex-1">
         <Board />
       </div>
     </div>
