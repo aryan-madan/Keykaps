@@ -1,4 +1,4 @@
-import { useState, useRef, ChangeEvent, DragEvent } from 'react'
+import { useState, useRef, useEffect, type ChangeEvent, type DragEvent } from 'react'
 import { parse } from '../parse/kle'
 import { useBoard } from '../store/board'
 
@@ -8,6 +8,7 @@ export function Upload() {
   const [drag, setDrag] = useState(false)
   const ref = useRef<HTMLInputElement>(null)
   const load = useBoard((state) => state.load)
+  const keys = useBoard((state) => state.keys)
 
   function process(raw: string) {
     if (!raw.trim()) return
@@ -37,6 +38,43 @@ export function Upload() {
     setDrag(false)
     read(e.dataTransfer.files?.[0])
   }
+
+  useEffect(() => {
+    function down(e: KeyboardEvent) {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return
+      keys.forEach((k) => {
+        const val = k.legend?.toLowerCase() || ''
+        const key = e.key.toLowerCase()
+        if (val === key || (key === ' ' && val === '')) {
+          const mesh = (window as any).__keyMeshes?.[k.id]
+          if (mesh) {
+            mesh.position.y -= 0.1
+          }
+        }
+      })
+    }
+
+    function up(e: KeyboardEvent) {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return
+      keys.forEach((k) => {
+        const val = k.legend?.toLowerCase() || ''
+        const key = e.key.toLowerCase()
+        if (val === key || (key === ' ' && val === '')) {
+          const mesh = (window as any).__keyMeshes?.[k.id]
+          if (mesh) {
+            mesh.position.y += 0.1
+          }
+        }
+      })
+    }
+
+    window.addEventListener('keydown', down)
+    window.addEventListener('keyup', up)
+    return () => {
+      window.removeEventListener('keydown', down)
+      window.removeEventListener('keyup', up)
+    }
+  }, [keys])
 
   return (
     <div className="absolute bottom-0 left-1/2 -translate-x-1/2 z-50">

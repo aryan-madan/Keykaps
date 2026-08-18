@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useState, useEffect, useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { Decal } from '@react-three/drei'
+import { useFrame } from '@react-three/fiber'
 import { useBoard } from '../store/board'
 import { place } from '../layout/place'
 import { cache } from '../geom/cache'
@@ -18,6 +19,9 @@ type Props = {
 export function Key({ data, mid }: Props) {
   const [ready, setReady] = useState(false)
   const select = useBoard((state) => state.select)
+  const ref = useRef<THREE.Group>(null)
+  const [down, setDown] = useState(false)
+
   const { pos, rot } = place(data)
   const geom = cache(data.w - gap, data.h - gap, data.row)
   const y = pos[1] + raise(pos[2] - mid)
@@ -36,6 +40,33 @@ export function Key({ data, mid }: Props) {
       setReady(true)
     })
   }, [])
+
+  useEffect(() => {
+    function handle(e: KeyboardEvent, state: boolean) {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return
+      const text = data.legend?.toLowerCase() || ''
+      const code = e.key.toLowerCase()
+      if (text === code || (code === ' ' && text === '')) {
+        setDown(state)
+      }
+    }
+
+    const downFn = (e: KeyboardEvent) => handle(e, true)
+    const upFn = (e: KeyboardEvent) => handle(e, false)
+
+    window.addEventListener('keydown', downFn)
+    window.addEventListener('keyup', upFn)
+    return () => {
+      window.removeEventListener('keydown', downFn)
+      window.removeEventListener('keyup', upFn)
+    }
+  }, [data.legend])
+
+  useFrame((_, delta) => {
+    if (!ref.current) return
+    const targetY = down ? -0.15 : 0
+    ref.current.position.y = THREE.MathUtils.lerp(ref.current.position.y, y + targetY, delta * 20)
+  })
 
   const tex = useMemo(() => {
     if (!data.legend || !ready) return null
@@ -70,7 +101,7 @@ export function Key({ data, mid }: Props) {
   }, [data.legend, tw, td, ready])
 
   return (
-    <group position={[pos[0], y, pos[2]]} rotation={rot}>
+    <group ref={ref} position={[pos[0], y, pos[2]]} rotation={rot}>
       <mesh onClick={() => select(data.id)} geometry={geom}>
         <meshStandardMaterial color={data.color || '#333333'} />
         {tex && (

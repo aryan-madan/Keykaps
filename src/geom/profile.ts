@@ -6,9 +6,9 @@ export type Profile = {
 }
 
 export const profile: Profile[] = [
-  { height: 0.56, taper: 0.72, tilt: 0.22, dish: 0.05 },
-  { height: 0.5, taper: 0.78, tilt: 0.14, dish: 0.08 },
-  { height: 0.44, taper: 0.84, tilt: 0.06, dish: 0.09 },
-  { height: 0.4, taper: 0.86, tilt: -0.04, dish: 0.07 },
-  { height: 0.34, taper: 0.9, tilt: 0, dish: 0.04 }
+  { height: 0.42, taper: 0.82, tilt: 0.20, dish: 0.045 },
+  { height: 0.36, taper: 0.88, tilt: 0.10, dish: 0.050 },
+  { height: 0.31, taper: 0.93, tilt: 0.00, dish: 0.055 },
+  { height: 0.34, taper: 0.88, tilt: -0.08, dish: 0.050 },
+  { height: 0.40, taper: 0.82, tilt: -0.18, dish: 0.045 }
 ]
