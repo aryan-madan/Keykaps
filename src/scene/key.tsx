@@ -34,6 +34,10 @@ export function Key({ data, mid }: Props) {
   const tw = Math.max(0.1, (data.w - gap) - (1 - prof.taper))
   const td = Math.max(0.1, (data.h - gap) - (1 - prof.taper))
 
+  const groupRotation = useMemo<[number, number, number]>(() => {
+    return [prof.rotation, rot[0], rot[0]]
+  }, [rot, prof.rotation])
+
   useEffect(() => {
     const font = new FontFace('Cherry', 'url(/typeface/cherry.otf)')
     font.load().then((loaded) => {
@@ -103,9 +107,20 @@ export function Key({ data, mid }: Props) {
     return texture
   }, [data.legend, data.textColor, tw, td, ready, brush.swatch.color])
 
+  const rawColor = data.color || '#333333'
+  const balancedColor = useMemo(() => {
+    const c = new THREE.Color(rawColor)
+    if (c.r < 0.6 && c.g < 0.6 && c.b < 0.6) {
+      c.multiplyScalar(0.35)
+    }
+    return c
+  }, [rawColor])
+
   return (
-    <group ref={ref} position={[pos[0], y, pos[2]]} rotation={rot}>
+    <group ref={ref} position={[pos[0], y, pos[2]]} rotation={groupRotation}>
       <mesh
+        castShadow
+        receiveShadow
         onClick={(e) => {
           e.stopPropagation()
           if (mode === 'edit') {
@@ -116,12 +131,17 @@ export function Key({ data, mid }: Props) {
         }}
         geometry={geom}
       >
-        <meshStandardMaterial color={data.color || '#333333'} />
+        <meshStandardMaterial
+          color={balancedColor}
+          metalness={0.05}
+          roughness={0.65}
+          envMapIntensity={0.9}
+        />
         {tex && (
           <Decal
-            position={[0, prof.height, 0]}
+            position={[0, prof.height - prof.dish * 0.5, 0]}
             rotation={[-Math.PI / 2 + prof.tilt, 0, 0]}
-            scale={[tw, td, 0.08]}
+            scale={[tw * 0.9, td * 0.9, 0.2]}
           >
             <meshBasicMaterial
               map={tex}

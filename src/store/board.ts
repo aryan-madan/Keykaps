@@ -60,6 +60,7 @@ type BoardState = {
   schemes: Scheme[]
   scheme: string | null
   background: string
+  envBg: boolean
   load: (keys: Key[]) => void
   paint: (id: string, color: string, textColor: string) => void
   select: (id: string | null) => void
@@ -68,6 +69,7 @@ type BoardState = {
   reshape: (shape: Partial<Shape>) => void
   modeSet: (mode: string) => void
   brushSet: (brush: { name: string; swatch: Swatch }) => void
+  setEnvBg: (envBg: boolean) => void
   save: (name: string, keys: Key[], kase: string, shape: Shape) => void
   loadBoard: (id: string) => void
   rename: (id: string, name: string) => void
@@ -106,6 +108,8 @@ export const useBoard = create<BoardState>((set, get) => ({
   schemes: [],
   scheme: null,
   background: '#09090b',
+  envBg: false,
+
   load: (keys) => {
     const id = Math.random().toString(36).substring(2, 9)
     const name = `board ${get().boards.length + 1}`
@@ -134,17 +138,27 @@ export const useBoard = create<BoardState>((set, get) => ({
     setBoards(boards)
     set({ keys: mappedKeys, boards, active: id, background: bg })
   },
+
   paint: (id, color, textColor) => set((state) => ({
     keys: state.keys.map((key) => key.id === id ? { ...key, color, textColor } : key)
   })),
+
   select: (id) => set({ selected: id }),
+
   paintLegend: (id, legend) => set((state) => ({
     keys: state.keys.map((k) => k.id === id ? { ...k, legend } : k)
   })),
+
   shell: (color) => set({ case: color }),
+
   reshape: (shape) => set((state) => ({ shape: { ...state.shape, ...shape } })),
+
   modeSet: (mode) => set({ mode }),
+
   brushSet: (brush) => set({ brush }),
+
+  setEnvBg: (envBg) => set({ envBg }),
+
   save: (name, keys, kase, shape) => {
     const id = Math.random().toString(36).substring(2, 9)
     const item: Saved = { id, name, keys, case: kase, shape }
@@ -152,6 +166,7 @@ export const useBoard = create<BoardState>((set, get) => ({
     setBoards(boards)
     set({ boards, active: id })
   },
+
   loadBoard: (id) => {
     const target = get().boards.find((b) => b.id === id)
     if (target) {
@@ -176,20 +191,24 @@ export const useBoard = create<BoardState>((set, get) => ({
       set({ keys: mappedKeys, case: target.case, shape: target.shape, active: target.id, background: bg })
     }
   },
+
   rename: (id, name) => {
     const boards = get().boards.map((b) => b.id === id ? { ...b, name } : b)
     setBoards(boards)
     set({ boards })
   },
+
   remove: (id) => {
     const boards = get().boards.filter((b) => b.id !== id)
     setBoards(boards)
     set({ boards, active: get().active === id ? null : get().active })
   },
+
   addScheme: (scheme) => set((state) => {
     if (state.schemes.some((s) => s.id === scheme.id)) return state
     return { schemes: [...state.schemes, scheme] }
   }),
+
   applyScheme: (scheme) => set((state) => {
     const override = scheme.override || {}
     const updated = state.keys.map((k) => {
@@ -209,6 +228,7 @@ export const useBoard = create<BoardState>((set, get) => ({
     const bg = scheme.swatches.accent?.background || scheme.swatches.base?.background || state.background
     return { keys: updated, scheme: scheme.id, background: bg }
   }),
+
   persist: () => {
     const { active, keys, case: kase, shape, boards } = get()
     if (!active) return

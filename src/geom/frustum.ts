@@ -23,18 +23,7 @@ export function frustum(width: number, depth: number, row: number) {
       const x = u * topWidth
       const z = v * topDepth + p.height * p.tilt
 
-      const du = Math.abs(u) * 2
-      const dv = Math.abs(v) * 2
-      const filletStart = 0.85
-      let edgeDrop = 0
-      if (du > filletStart || dv > filletStart) {
-        const fx = Math.max(0, (du - filletStart) / (1 - filletStart))
-        const fz = Math.max(0, (dv - filletStart) / (1 - filletStart))
-        const f = Math.max(fx, fz)
-        edgeDrop = 0.025 * (1 - Math.cos(f * Math.PI * 0.5))
-      }
-
-      const y = p.height - dish(u, p.dish) - edgeDrop
+      const y = p.height - dish(u, p.dish)
       line.push(pos.length / 3)
       pos.push(x, y, z)
     }

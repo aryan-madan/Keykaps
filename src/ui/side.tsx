@@ -4,13 +4,11 @@ import { parse } from '../parse/kle'
 import { 
   FaBars, 
   FaTimes, 
-  FaPaintBrush, 
-  FaPalette, 
-  FaKeyboard, 
   FaFileCode, 
   FaTrash, 
   FaCheck,
-  FaArrowRight
+  FaArrowRight,
+  FaDownload
 } from 'react-icons/fa'
 
 export function Side() {
@@ -36,7 +34,9 @@ export function Side() {
     keys,
     selected,
     paintLegend,
-    load
+    load,
+    envBg,
+    setEnvBg
   } = useBoard()
 
   const [name, setName] = useState('')
@@ -120,6 +120,32 @@ export function Side() {
     reader.readAsText(file)
   }
 
+  function exportJson(boardId: string) {
+    const targetBoard = boards.find((b) => b.id === boardId)
+    const exportData = {
+      name: targetBoard ? targetBoard.name : 'keyboard-layout',
+      keys: keys.map(({ id, x, y, w, h, row, color, textColor, legend }) => ({
+        id,
+        x,
+        y,
+        w,
+        h,
+        row,
+        color,
+        textColor,
+        legend
+      }))
+    }
+
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportData, null, 2))
+    const downloadAnchor = document.createElement('a')
+    downloadAnchor.setAttribute('href', dataStr)
+    downloadAnchor.setAttribute('download', `${(targetBoard?.name || 'keyboard').toLowerCase().replace(/\s+/g, '-')}.json`)
+    document.body.appendChild(downloadAnchor)
+    downloadAnchor.click()
+    downloadAnchor.remove()
+  }
+
   const activeScheme = schemes.find((s) => s.id === scheme)
 
   return (
@@ -137,12 +163,7 @@ export function Side() {
         }`}
       >
         <header className="flex h-14 items-center justify-between border-b border-white/[0.06] px-5">
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-white/10 font-mono text-[11px] font-semibold text-white ring-1 ring-white/10">
-              k
-            </div>
-            <h1 className="text-[13px] font-medium tracking-tight text-white/95">keykaps</h1>
-          </div>
+          <h1 className="text-[13px] font-medium tracking-tight text-white/95">keykaps</h1>
 
           <button
             onClick={() => setOpen(false)}
@@ -155,20 +176,19 @@ export function Side() {
         <div className="p-4 pb-0">
           <nav className="flex rounded-2xl bg-[#141416] p-1 ring-1 ring-white/[0.04]">
             {[
-              ['editor', 'design', FaPaintBrush],
-              ['colorways', 'palettes', FaPalette],
-              ['boards', 'layouts', FaKeyboard]
-            ].map(([value, label, Icon]) => (
+              ['editor', 'design'],
+              ['colorways', 'palettes'],
+              ['boards', 'layouts']
+            ].map(([value, label]) => (
               <button
                 key={value}
                 onClick={() => setTab(value)}
-                className={`flex-1 flex items-center justify-center gap-1.5 rounded-xl py-1.5 text-[11px] font-medium transition ${
+                className={`flex-1 flex items-center justify-center rounded-xl py-1.5 text-[11px] font-medium transition ${
                   tab === value
                     ? 'bg-[#222226] text-white shadow-md ring-1 ring-white/[0.08]'
                     : 'text-[#8e8e93] hover:text-white'
                 }`}
               >
-                <Icon className="h-3 w-3 opacity-70" />
                 <span>{label}</span>
               </button>
             ))}
@@ -203,6 +223,21 @@ export function Side() {
                 >
                   <span className="font-medium text-white/95">
                     {mode === 'edit' ? 'painting' : 'inspecting'}
+                  </span>
+                  <span className="text-[10px] text-[#8e8e93] font-mono lowercase">click to toggle</span>
+                </button>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
+                  environment background
+                </label>
+                <button
+                  onClick={() => setEnvBg(!envBg)}
+                  className="flex h-8 w-full items-center justify-between rounded-xl bg-[#141416] px-3 text-[11px] ring-1 ring-white/[0.06] transition hover:bg-[#1a1a1e]"
+                >
+                  <span className="font-medium text-white/95">
+                    {envBg ? 'enabled' : 'disabled'}
                   </span>
                   <span className="text-[10px] text-[#8e8e93] font-mono lowercase">click to toggle</span>
                 </button>
@@ -490,16 +525,26 @@ export function Side() {
                             className="min-w-0 flex-1 bg-transparent px-1 text-[11px] text-white/95 outline-none"
                           />
 
-                          <button
-                            onClick={() => loadBoard(item.id)}
-                            className={`rounded-lg px-2.5 py-1 text-[10px] font-medium transition ${
-                              activeItem
-                                ? 'bg-white/20 text-white'
-                                : 'text-[#8e8e93] hover:bg-white/10 hover:text-white'
-                            }`}
-                          >
-                            {activeItem ? 'loaded' : 'load'}
-                          </button>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button
+                              onClick={() => loadBoard(item.id)}
+                              className={`rounded-lg px-2.5 py-1 text-[10px] font-medium transition ${
+                                activeItem
+                                  ? 'bg-white/20 text-white'
+                                  : 'text-[#8e8e93] hover:bg-white/10 hover:text-white'
+                              }`}
+                            >
+                              {activeItem ? 'loaded' : 'load'}
+                            </button>
+
+                            <button
+                              onClick={() => exportJson(item.id)}
+                              className="flex h-6 w-6 items-center justify-center rounded-lg text-[#8e8e93] transition hover:bg-white/10 hover:text-white"
+                              title="export json"
+                            >
+                              <FaDownload className="h-2.5 w-2.5" />
+                            </button>
+                          </div>
 
                           <button
                             onClick={() => remove(item.id)}

@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 import * as THREE from 'three'
+import { useTexture } from '@react-three/drei'
 import { useBoard } from '../store/board'
 import { bound } from '../layout/bound'
 import { ring } from '../geom/case'
@@ -10,6 +11,19 @@ export function Case() {
   const color = useBoard((state) => state.case)
   const shape = useBoard((state) => state.shape)
   const box = keys.length > 0 ? bound(keys) : null
+
+  const [normalMap, roughnessMap, metalnessMap, aoMap] = useTexture([
+    '/textures/metal/brushed-metal_normal-ogl.png',
+    '/textures/metal/brushed-metal_roughness.png',
+    '/textures/metal/brushed-metal_metallic.png',
+    '/textures/metal/brushed-metal_ao.png',
+  ])
+
+  ;[normalMap, roughnessMap, metalnessMap, aoMap].forEach((tex) => {
+    tex.wrapS = THREE.RepeatWrapping
+    tex.wrapT = THREE.RepeatWrapping
+    tex.repeat.set(2, 2)
+  })
 
   const { wall, bottom, topFrame, topY } = useMemo(() => {
     if (!box || keys.length === 0) return { wall: null, bottom: null, topFrame: null, topY: 0 }
@@ -170,7 +184,7 @@ export function Case() {
 
         if (!nextEdge) break
         nextEdge.used = true
-        pathPoints.push(nextEdge.p2)
+        pathPoints.pathPoints?.push?.(nextEdge.p2) || pathPoints.push(nextEdge.p2)
         current = nextEdge.p2
 
         if (
@@ -194,14 +208,14 @@ export function Case() {
     })
 
     const tf = new THREE.ExtrudeGeometry(frameShape, {
-      depth: 0.02,
+      depth: 0.01,
       bevelEnabled: false,
       steps: 1
     })
     tf.rotateX(Math.PI / 2)
     tf.computeVertexNormals()
 
-    return { wall: wg, bottom: bg, topFrame: tf, topY: topHeight }
+    return { wall: wg, bottom: bg, topFrame: tf, topY: topHeight + 0.001 }
   }, [box, shape.pad, shape.inset, shape.wall, shape.height, keys])
 
   if (!box || !wall) return null
@@ -210,24 +224,31 @@ export function Case() {
   const z = box.miny + (box.maxy - box.miny) / 2
 
   const matProps = {
-    color,
+    color: (!color || color === '#000000') ? '#ffffff' : color,
+    normalMap,
+    roughnessMap,
+    metalnessMap,
+    aoMap,
     side: THREE.DoubleSide,
-    metalness: 0.45,
-    roughness: 0.35
+    metalness: 0.9,
+    roughness: 0.5,
+    polygonOffset: true,
+    polygonOffsetFactor: 1,
+    polygonOffsetUnits: 1
   }
 
   return (
     <group position={[x, -0.15, z]}>
-      <mesh geometry={wall}>
+      <mesh geometry={wall} castShadow receiveShadow>
         <meshStandardMaterial {...matProps} />
       </mesh>
       {bottom && (
-        <mesh geometry={bottom}>
+        <mesh geometry={bottom} castShadow receiveShadow>
           <meshStandardMaterial {...matProps} />
         </mesh>
       )}
       {topFrame && (
-        <mesh geometry={topFrame} position={[0, topY, 0]}>
+        <mesh geometry={topFrame} position={[0, topY, 0]} castShadow receiveShadow>
           <meshStandardMaterial {...matProps} />
         </mesh>
       )}

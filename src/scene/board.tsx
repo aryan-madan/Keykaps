@@ -14,6 +14,7 @@ import { Case } from './case'
 
 export function Board() {
   const keys = useBoard((state) => state.keys)
+  const envBg = useBoard((state) => state.envBg)
   const box = keys.length > 0 ? bound(keys) : null
   const mid = box ? center(box) : { x: 0, z: 0 }
   const depth = box ? box.maxy - box.miny : 5
@@ -27,25 +28,26 @@ export function Board() {
         powerPreference: 'high-performance'
       }}
       onCreated={({ gl }) => {
-        gl.toneMappingExposure = 0.85
+        gl.toneMappingExposure = 1.0
       }}
     >
       <PerspectiveCamera
         makeDefault
         position={[0, 8.5, 13]}
-        fov={40}
+        fov={50}
       />
 
       <Environment
-        preset="studio"
-        environmentIntensity={0.03}
+        files="/textures/environment/paul_lobe_haus_4k.exr"
+        environmentIntensity={0.8}
+        background={envBg}
       />
 
-      <ambientLight intensity={0.02} />
+      <ambientLight intensity={0.1} />
 
       <directionalLight
         position={[-10, 14, 8]}
-        intensity={2.2}
+        intensity={2.0}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
@@ -57,24 +59,6 @@ export function Board() {
         shadow-camera-bottom={-10}
         shadow-bias={-0.0001}
         shadow-normalBias={0.02}
-      />
-
-      <directionalLight
-        position={[9, 6, -7]}
-        intensity={0.4}
-        color="#bfe3ff"
-      />
-
-      <spotLight
-        position={[-6, 10, -6]}
-        intensity={0.6}
-        angle={0.5}
-        penumbra={0.2}
-        distance={25}
-        castShadow
-        shadow-mapSize-width={1024}
-        shadow-mapSize-height={1024}
-        shadow-bias={-0.0001}
       />
 
       <group
