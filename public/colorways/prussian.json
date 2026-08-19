@@ -1,0 +1,19 @@
+{
+  "id": "prussian",
+  "label": "Prussian",
+  "manufacturer": "GMK",
+  "swatches": {
+    "base": {
+      "background": "#f0eded",
+      "color": "#0b3345"    
+    },
+    "mods": {
+      "background": "#b1abb2",
+      "color": "#0b3345"
+    },
+    "accent": {
+      "background": "#0b3345",
+      "color": "#FFFFFF"
+    }
+  }
+}

@@ -31,7 +31,7 @@ export function Case() {
       if (y > max) max = y
     }
 
-    const height = shape.height
+    const height = shape.height * 0.6
     const ct = Math.cos(tilt)
     const tt = Math.tan(tilt)
     const shift = 0.52

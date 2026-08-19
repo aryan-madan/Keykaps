@@ -1,0 +1,18 @@
+{
+  "id": "olivia",
+  "label": "Olivia",
+  "swatches": {
+    "base": {
+      "background": "#e1dbd1",
+      "color": "#2B2B2B"
+    },
+    "mods": {
+      "background": "#2B2B2B",
+      "color": "#f1beb0"
+    },
+    "accent": {
+      "background": "#f1beb0",
+      "color": "#2B2B2B"
+    }
+  }
+}

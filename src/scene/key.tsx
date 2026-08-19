@@ -18,6 +18,9 @@ type Props = {
 
 export function Key({ data, mid }: Props) {
   const [ready, setReady] = useState(false)
+  const mode = useBoard((state) => state.mode)
+  const brush = useBoard((state) => state.brush)
+  const paint = useBoard((state) => state.paint)
   const select = useBoard((state) => state.select)
   const ref = useRef<THREE.Group>(null)
   const [down, setDown] = useState(false)
@@ -79,7 +82,7 @@ export function Key({ data, mid }: Props) {
     const ctx = canvas.getContext('2d')
     if (!ctx) return null
 
-    ctx.fillStyle = '#222222'
+    ctx.fillStyle = data.textColor || brush.swatch.color || '#222222'
     ctx.textAlign = 'left'
     ctx.textBaseline = 'top'
 
@@ -98,23 +101,34 @@ export function Key({ data, mid }: Props) {
     const texture = new THREE.CanvasTexture(canvas)
     texture.needsUpdate = true
     return texture
-  }, [data.legend, tw, td, ready])
+  }, [data.legend, data.textColor, tw, td, ready, brush.swatch.color])
 
   return (
     <group ref={ref} position={[pos[0], y, pos[2]]} rotation={rot}>
-      <mesh onClick={() => select(data.id)} geometry={geom}>
+      <mesh
+        onClick={(e) => {
+          e.stopPropagation()
+          if (mode === 'edit') {
+            paint(data.id, brush.swatch.background, brush.swatch.color)
+          } else {
+            select(data.id)
+          }
+        }}
+        geometry={geom}
+      >
         <meshStandardMaterial color={data.color || '#333333'} />
         {tex && (
           <Decal
             position={[0, prof.height, 0]}
             rotation={[-Math.PI / 2 + prof.tilt, 0, 0]}
-            scale={[tw, td, 0.5]}
+            scale={[tw, td, 0.08]}
           >
             <meshBasicMaterial
               map={tex}
               transparent
               polygonOffset
-              polygonOffsetFactor={-1}
+              polygonOffsetFactor={-4}
+              polygonOffsetUnits={-4}
             />
           </Decal>
         )}

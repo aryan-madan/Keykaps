@@ -1,10 +1,16 @@
 import { Board } from './scene/board'
-import { Upload } from './ui/upload'
+import { Side } from './ui/side'
+import { useBoard } from './store/board'
 
 export function App() {
+  const background = useBoard((state) => state.background)
+
   return (
-    <div className="flex h-screen flex-col bg-neutral-950">
-      <Upload />
+    <div 
+      className="flex h-screen flex-col relative overflow-hidden transition-colors duration-500"
+      style={{ backgroundColor: background }}
+    >
+      <Side />
       <div className="flex-1">
         <Board />
       </div>
