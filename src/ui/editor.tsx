@@ -32,7 +32,7 @@ export function Editor() {
               <input
                 type="color"
                 value={item.color}
-                onChange={(e) => paint(item.id, e.target.value)}
+                onChange={(e) => paint(item.id, e.target.value, item.textColor)}
                 className="w-8 h-8 rounded-lg bg-transparent cursor-pointer border border-neutral-700"
               />
               <span className="text-xs text-neutral-200">{item.color}</span>

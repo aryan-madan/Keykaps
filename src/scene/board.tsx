@@ -17,7 +17,6 @@ export function Board() {
   const envBg = useBoard((state) => state.envBg)
   const box = keys.length > 0 ? bound(keys) : null
   const mid = box ? center(box) : { x: 0, z: 0 }
-  const depth = box ? box.maxy - box.miny : 5
 
   return (
     <Canvas
@@ -75,7 +74,6 @@ export function Board() {
             key={key.id}
             data={key}
             mid={mid.z}
-            depth={depth}
           />
         ))}
       </group>

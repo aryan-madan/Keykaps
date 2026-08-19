@@ -184,7 +184,7 @@ export function Case() {
 
         if (!nextEdge) break
         nextEdge.used = true
-        pathPoints.pathPoints?.push?.(nextEdge.p2) || pathPoints.push(nextEdge.p2)
+        pathPoints.push(nextEdge.p2)
         current = nextEdge.p2
 
         if (

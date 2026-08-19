@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { create } from 'zustand'
 
 export type Key = {
