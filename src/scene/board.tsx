@@ -14,7 +14,7 @@ import { Case } from './case'
 
 export function Board() {
   const keys = useBoard((state) => state.keys)
-  const envBg = useBoard((state) => state.envBg)
+  const envBg = useBoard((state) => state.env)
   const box = keys.length > 0 ? bound(keys) : null
   const mid = box ? center(box) : { x: 0, z: 0 }
 

@@ -3,17 +3,19 @@ import { useBoard, type Scheme, type Saved } from '../store/board'
 import { parse } from '../parse/kle'
 import { dump } from '../parse/export'
 import {
-  FaBars,
-  FaTimes,
-  FaFileCode,
-  FaTrash,
-  FaCheck,
-  FaArrowRight,
-  FaDownload
-} from 'react-icons/fa'
+  FiMenu,
+  FiX,
+  FiCode,
+  FiTrash2,
+  FiArrowRight,
+  FiDownload,
+  FiSliders,
+  FiDroplet,
+  FiLayers
+} from 'react-icons/fi'
 
 export function Side() {
-  const [show, setShow] = useState(false)
+  const [show, setShow] = useState(true)
   const [tab, setTab] = useState('editor')
 
   const {
@@ -42,11 +44,11 @@ export function Side() {
   } = useBoard()
 
   const [inputName, setInputName] = useState('')
-  const [baseBg, setBaseBg] = useState('#1c1c1e')
-  const [baseFg, setBaseFg] = useState('#f5f5f7')
-  const [modsBg, setModsBg] = useState('#2c2c2e')
-  const [modsFg, setModsFg] = useState('#f5f5f7')
-  const [accentBg, setAccentBg] = useState('#0a84ff')
+  const [baseBg, setBaseBg] = useState('#18181b')
+  const [baseFg, setBaseFg] = useState('#f4f4f5')
+  const [modsBg, setModsBg] = useState('#09090b')
+  const [modsFg, setModsFg] = useState('#f4f4f5')
+  const [accentBg, setAccentBg] = useState('#3f3f46')
   const [accentFg, setAccentFg] = useState('#ffffff')
 
   const item = keys.find((k) => k.id === selected)
@@ -148,7 +150,7 @@ export function Side() {
     const uri = 'data:text/json;charset=utf-8,' + encodeURIComponent(str)
     const anchor = document.createElement('a')
     anchor.setAttribute('href', uri)
-    anchor.setAttribute('download', `${target.name.toLowerCase().replace(/\s+/g, '-')}.keykap`)
+    anchor.setAttribute('download', `${target.name.toLowerCase().replace(/\s+/g, '-')}.keycap`)
     document.body.appendChild(anchor)
     anchor.click()
     anchor.remove()
@@ -156,406 +158,443 @@ export function Side() {
 
   const currentScheme = schemes.find((s) => s.id === scheme)
 
+  const getBlurItemStyle = (index: number) => ({
+    transitionDelay: show ? `${60 + index * 45}ms` : '0ms'
+  })
+
+  const blurItemClass = `transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+    show
+      ? 'opacity-100 blur-0 translate-y-0 scale-100'
+      : 'opacity-0 blur-xl -translate-y-2 scale-95 pointer-events-none'
+  }`
+
   return (
     <>
-      <button
-        onClick={() => setShow(!show)}
-        className="fixed left-4 top-4 z-45 flex h-9 w-9 items-center justify-center rounded-2xl bg-[#0a0a0c]/90 text-[#8e8e93] shadow-lg ring-1 ring-white/10 backdrop-blur-md transition hover:bg-[#141416] hover:text-white active:scale-95"
-      >
-        <FaBars className="h-3.5 w-3.5" />
-      </button>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+        
+        @font-face {
+          font-family: 'Cherry';
+          src: url('/typeface/cherry.otf') format('opentype');
+        }
 
-      <aside
-        className={`fixed left-0 top-0 z-50 flex h-full w-80 flex-col bg-[#0d0d0f]/95 text-[#f5f5f7] shadow-2xl ring-1 ring-white/[0.08] backdrop-blur-xl transition-transform duration-300 ease-out ${show ? 'translate-x-0' : '-translate-x-full'
-          }`}
-      >
-        <header className="flex h-14 items-center justify-between border-b border-white/[0.06] px-5">
-          <h1 className="text-[13px] font-medium tracking-tight text-white/95">keykaps</h1>
+        .font-sans {
+          font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
 
+        .font-cherry {
+          font-family: 'Cherry', cursive, sans-serif;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+      `}</style>
+
+      <div
+        className={`fixed left-5 top-5 z-50 font-sans bg-zinc-950 transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          show
+            ? 'h-[calc(100vh-40px)] w-[250px] rounded-2xl shadow-2xl'
+            : 'h-9 w-9 rounded-xl shadow-lg hover:bg-zinc-900'
+        }`}
+      >
+        {!show ? (
           <button
-            onClick={() => setShow(false)}
-            className="flex h-7 w-7 items-center justify-center rounded-xl text-[#8e8e93] transition hover:bg-white/10 hover:text-white"
+            onClick={() => setShow(true)}
+            className="flex h-full w-full items-center justify-center text-zinc-300 hover:text-zinc-100 transition-colors duration-150"
           >
-            <FaTimes className="h-3.5 w-3.5" />
+            <FiMenu className="h-3.5 w-3.5" />
           </button>
-        </header>
-
-        <div className="p-4 pb-0">
-          <nav className="flex rounded-2xl bg-[#141416] p-1 ring-1 ring-white/[0.04]">
-            {[
-              ['editor', 'design'],
-              ['colorways', 'palettes'],
-              ['boards', 'layouts']
-            ].map(([value, label]) => (
+        ) : (
+          <div className="flex h-full w-full flex-col text-zinc-200 overflow-hidden">
+            <div
+              style={getBlurItemStyle(0)}
+              className={`flex h-12 shrink-0 items-center justify-between px-3.5 pt-1 ${blurItemClass}`}
+            >
+              <span className="font-cherry text-xl tracking-wide text-zinc-100">keykaps</span>
               <button
-                key={value}
-                onClick={() => setTab(value)}
-                className={`flex-1 flex items-center justify-center rounded-xl py-1.5 text-[11px] font-medium transition ${tab === value
-                    ? 'bg-[#222226] text-white shadow-md ring-1 ring-white/[0.08]'
-                    : 'text-[#8e8e93] hover:text-white'
-                  }`}
+                onClick={() => setShow(false)}
+                className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
               >
-                <span>{label}</span>
+                <FiX className="h-3.5 w-3.5" />
               </button>
-            ))}
-          </nav>
-        </div>
+            </div>
 
-        <main className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-          {tab === 'editor' && (
-            <div className="space-y-4">
-              {active && (
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                    layout name
-                  </label>
-                  <input
-                    type="text"
-                    value={boards.find((b) => b.id === active)?.name || ''}
-                    onChange={(e) => rename(active, e.target.value)}
-                    placeholder="my keyboard"
-                    className="h-8 w-full rounded-xl bg-[#141416] px-3 text-[11px] text-white/95 ring-1 ring-white/[0.06] outline-none transition focus:bg-[#1a1a1e] focus:ring-white/25"
-                  />
+            <div
+              style={getBlurItemStyle(1)}
+              className={`px-3 py-1 ${blurItemClass}`}
+            >
+              <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-xl">
+                {[
+                  ['editor', 'Editor', FiSliders],
+                  ['colorways', 'Colors', FiDroplet],
+                  ['boards', 'Boards', FiLayers]
+                ].map(([id, label, Icon]: [string, string, any]) => {
+                  const isActiveTab = tab === id
+                  return (
+                    <button
+                      key={id}
+                      onClick={() => setTab(id)}
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] font-medium transition-all duration-150 ${
+                        isActiveTab
+                          ? 'bg-zinc-100 text-zinc-950 font-semibold'
+                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                      }`}
+                    >
+                      <Icon className="h-3 w-3" />
+                      <span>{label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-4">
+              {tab === 'editor' && (
+                <div className="space-y-3">
+                  {active && (
+                    <div
+                      style={getBlurItemStyle(2)}
+                      className={`space-y-1 ${blurItemClass}`}
+                    >
+                      <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                        Layout Name
+                      </label>
+                      <input
+                        type="text"
+                        value={boards.find((b) => b.id === active)?.name || ''}
+                        onChange={(e) => rename(active, e.target.value)}
+                        placeholder="Custom layout"
+                        className="h-8 w-full bg-zinc-900 text-zinc-100 rounded-xl px-3 text-[11px] outline-none transition placeholder:text-zinc-600 focus:bg-zinc-800"
+                      />
+                    </div>
+                  )}
+
+                  <div
+                    style={getBlurItemStyle(3)}
+                    className={`space-y-1 ${blurItemClass}`}
+                  >
+                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                      Mode
+                    </label>
+                    <button
+                      onClick={() => modeSet(mode === 'edit' ? 'view' : 'edit')}
+                      className="flex h-8 w-full items-center justify-between bg-zinc-900 hover:bg-zinc-800 px-3 rounded-xl text-[11px] transition"
+                    >
+                      <span className="text-zinc-200">{mode === 'edit' ? 'Painting' : 'Inspecting'}</span>
+                      <span className="text-[9px] text-zinc-500 font-mono">Toggle</span>
+                    </button>
+                  </div>
+
+                  <div
+                    style={getBlurItemStyle(4)}
+                    className={`space-y-1 ${blurItemClass}`}
+                  >
+                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                      Background
+                    </label>
+                    <button
+                      onClick={() => envSet(!env)}
+                      className="flex h-8 w-full items-center justify-between bg-zinc-900 hover:bg-zinc-800 px-3 rounded-xl text-[11px] transition"
+                    >
+                      <span className="text-zinc-200">{env ? 'Enabled' : 'Disabled'}</span>
+                      <span className="text-[9px] text-zinc-500 font-mono">Toggle</span>
+                    </button>
+                  </div>
+
+                  <div
+                    style={getBlurItemStyle(5)}
+                    className={`space-y-1 ${blurItemClass}`}
+                  >
+                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                      Key Legend
+                    </label>
+                    {item ? (
+                      <input
+                        type="text"
+                        value={text}
+                        onChange={(e) => {
+                          setText(e.target.value)
+                          legend(item.id, e.target.value)
+                        }}
+                        placeholder="Enter legend..."
+                        className="h-8 w-full bg-zinc-900 text-zinc-100 rounded-xl px-3 text-[11px] outline-none transition placeholder:text-zinc-600 focus:bg-zinc-800"
+                      />
+                    ) : (
+                      <div className="flex h-8 items-center bg-zinc-900 px-3 rounded-xl text-[10px] text-zinc-600 font-mono">
+                        Select a key
+                      </div>
+                    )}
+                  </div>
+
+                  <div
+                    style={getBlurItemStyle(6)}
+                    className={`space-y-1 ${blurItemClass}`}
+                  >
+                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                      Case Color
+                    </label>
+                    <div className="flex items-center justify-between bg-zinc-900 px-3 py-1.5 rounded-xl">
+                      <span className="text-[11px] text-zinc-400">Hex</span>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={useBoard.getState().case}
+                          onChange={(e) => shell(e.target.value)}
+                          className="h-4 w-4 cursor-pointer appearance-none rounded-md bg-transparent border-0 p-0"
+                        />
+                        <span className="font-mono text-[11px] text-zinc-200">
+                          {useBoard.getState().case}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    style={getBlurItemStyle(7)}
+                    className={`space-y-1 ${blurItemClass}`}
+                  >
+                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                      Active Brush
+                    </label>
+                    {currentScheme ? (
+                      <div className="bg-zinc-900 rounded-xl p-1 space-y-0.5">
+                        {Object.entries(currentScheme.swatches).map(([name, swatch]) => {
+                          const activeBrush = brush.name === name
+                          return (
+                            <button
+                              key={name}
+                              onClick={() => brushSet({ name, swatch })}
+                              className={`flex h-7 w-full items-center justify-between px-2.5 text-[11px] rounded-lg transition ${
+                                activeBrush
+                                  ? 'bg-zinc-100 text-zinc-950 font-semibold'
+                                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'
+                              }`}
+                            >
+                              <span className="capitalize">{name}</span>
+                              <span className="flex items-center gap-1">
+                                <span className="h-3 w-3 rounded-md" style={{ backgroundColor: swatch.background }} />
+                                <span className="h-3 w-3 rounded-md" style={{ backgroundColor: swatch.color }} />
+                              </span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-[10px] text-zinc-600 px-1">No palette loaded.</div>
+                    )}
+                  </div>
                 </div>
               )}
 
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                  interaction mode
-                </label>
-                <button
-                  onClick={() => modeSet(mode === 'edit' ? 'view' : 'edit')}
-                  className="flex h-8 w-full items-center justify-between rounded-xl bg-[#141416] px-3 text-[11px] ring-1 ring-white/[0.06] transition hover:bg-[#1a1a1e]"
-                >
-                  <span className="font-medium text-white/95">
-                    {mode === 'edit' ? 'painting' : 'inspecting'}
-                  </span>
-                  <span className="text-[10px] text-[#8e8e93] font-mono lowercase">click to toggle</span>
-                </button>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                  environment background
-                </label>
-                <button
-                  onClick={() => envSet(!env)}
-                  className="flex h-8 w-full items-center justify-between rounded-xl bg-[#141416] px-3 text-[11px] ring-1 ring-white/[0.06] transition hover:bg-[#1a1a1e]"
-                >
-                  <span className="font-medium text-white/95">
-                    {env ? 'enabled' : 'disabled'}
-                  </span>
-                  <span className="text-[10px] text-[#8e8e93] font-mono lowercase">click to toggle</span>
-                </button>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                  key legend
-                </label>
-                {item ? (
-                  <input
-                    type="text"
-                    value={text}
-                    onChange={(e) => {
-                      setText(e.target.value)
-                      legend(item.id, e.target.value)
-                    }}
-                    placeholder="enter text..."
-                    className="h-8 w-full rounded-xl bg-[#141416] px-3 text-[11px] text-white/95 ring-1 ring-white/[0.06] outline-none transition focus:bg-[#1a1a1e] focus:ring-white/25"
-                  />
-                ) : (
-                  <div className="flex h-8 items-center rounded-xl border border-dashed border-white/10 px-3 text-[10px] text-[#8e8e93]">
-                    click any key to edit legend
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                  case color
-                </label>
-                <div className="flex items-center justify-between rounded-xl bg-[#141416] p-2 ring-1 ring-white/[0.06]">
-                  <div className="flex items-center gap-2.5">
-                    <input
-                      type="color"
-                      value={useBoard.getState().case}
-                      onChange={(e) => shell(e.target.value)}
-                      className="h-5 w-5 cursor-pointer appearance-none rounded-lg border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-lg [&::-webkit-color-swatch]:border-0"
-                    />
-                    <span className="font-mono text-[10px] font-medium text-[#8e8e93]">
-                      {useBoard.getState().case}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                  active brush
-                </label>
-                {currentScheme ? (
-                  <div className="overflow-hidden rounded-2xl bg-[#141416] ring-1 ring-white/[0.06]">
-                    {Object.entries(currentScheme.swatches).map(([name, swatch], index) => {
-                      const activeBrush = brush.name === name
-
+              {tab === 'colorways' && (
+                <div className="space-y-3">
+                  <div
+                    style={getBlurItemStyle(2)}
+                    className={`space-y-1 ${blurItemClass}`}
+                  >
+                    {schemes.map((s) => {
+                      const activeItem = scheme === s.id
                       return (
                         <button
-                          key={name}
-                          onClick={() => brushSet({ name, swatch })}
-                          className={`flex h-8 w-full items-center justify-between px-3 text-[11px] transition ${index > 0 ? 'border-t border-white/[0.04]' : ''
-                            } ${activeBrush
-                              ? 'bg-white/10 font-medium text-white'
-                              : 'text-[#8e8e93] hover:bg-white/[0.04] hover:text-white'
-                            }`}
+                          key={s.id}
+                          onClick={() => apply(s)}
+                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-[11px] font-medium transition ${
+                            activeItem
+                              ? 'bg-zinc-100 text-zinc-950 font-semibold'
+                              : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
+                          }`}
                         >
-                          <span className="capitalize">{name}</span>
-                          <span className="flex items-center gap-1.5">
-                            <span
-                              className="h-3 w-3 rounded-md ring-1 ring-black/20"
-                              style={{ backgroundColor: swatch.background }}
-                            />
-                            <span
-                              className="h-3 w-3 rounded-md ring-1 ring-black/20"
-                              style={{ backgroundColor: swatch.color }}
-                            />
-                          </span>
+                          <span>{s.label}</span>
+                          {activeItem && <span className="h-1.5 w-1.5 rounded-full bg-zinc-950" />}
                         </button>
                       )
                     })}
                   </div>
-                ) : (
-                  <div className="text-[10px] text-[#8e8e93]">no color palette loaded.</div>
-                )}
-              </div>
-            </div>
-          )}
 
-          {tab === 'colorways' && (
-            <div className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                  color presets
-                </label>
-                <div className="space-y-1">
-                  {schemes.map((s) => {
-                    const activeItem = scheme === s.id
-
-                    return (
-                      <button
-                        key={s.id}
-                        onClick={() => apply(s)}
-                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-[11px] transition ${activeItem
-                            ? 'bg-white/10 font-medium text-white ring-1 ring-white/[0.08]'
-                            : 'bg-[#141416] text-[#8e8e93] ring-1 ring-white/[0.04] hover:bg-[#1a1a1e] hover:text-white'
-                          }`}
-                      >
-                        <span>{s.label}</span>
-                        {activeItem && (
-                          <span className="flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[9px] text-white">
-                            <FaCheck className="h-2 w-2" />
-                            active
-                          </span>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              </div>
-
-              <div className="space-y-2.5 pt-1">
-                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                  create custom palette
-                </label>
-
-                <input
-                  type="text"
-                  value={inputName}
-                  onChange={(e) => setInputName(e.target.value)}
-                  placeholder="palette name..."
-                  className="h-8 w-full rounded-xl bg-[#141416] px-3 text-[11px] text-white/95 ring-1 ring-white/[0.06] outline-none transition focus:bg-[#1a1a1e] focus:ring-white/25"
-                />
-
-                <div className="divide-y divide-white/[0.04] overflow-hidden rounded-2xl bg-[#141416] ring-1 ring-white/[0.06]">
-                  {[
-                    ['base', baseBg, baseFg, setBaseBg, setBaseFg],
-                    ['mods', modsBg, modsFg, setModsBg, setModsFg],
-                    ['accent', accentBg, accentFg, setAccentBg, setAccentFg]
-                  ].map(([label, bg, fg, setBg, setFg]) => (
-                    <div key={label as string} className="flex h-9 items-center justify-between px-3">
-                      <span className="text-[11px] text-[#8e8e93]">{label as string}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-lg ring-1 ring-white/[0.04]">
-                          <span className="text-[9px] text-[#8e8e93] font-mono">bg</span>
-                          <input
-                            type="color"
-                            value={bg as string}
-                            onChange={(e) => (setBg as (v: string) => void)(e.target.value)}
-                            className="h-4 w-4 cursor-pointer appearance-none rounded-md border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0"
-                          />
-                        </div>
-                        <div className="flex items-center gap-1.5 bg-black/40 px-2 py-1 rounded-lg ring-1 ring-white/[0.04]">
-                          <span className="text-[9px] text-[#8e8e93] font-mono">fg</span>
-                          <input
-                            type="color"
-                            value={fg as string}
-                            onChange={(e) => (setFg as (v: string) => void)(e.target.value)}
-                            className="h-4 w-4 cursor-pointer appearance-none rounded-md border-0 bg-transparent p-0 [&::-webkit-color-swatch-wrapper]:p-0 [&::-webkit-color-swatch]:rounded-md [&::-webkit-color-swatch]:border-0"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-
-                <button
-                  onClick={create}
-                  className="w-full rounded-xl bg-white/10 py-2 text-[11px] font-medium text-white ring-1 ring-white/[0.08] transition hover:bg-white/20 active:scale-[0.98]"
-                >
-                  save palette
-                </button>
-              </div>
-            </div>
-          )}
-
-          {tab === 'boards' && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                  import layout
-                </label>
-
-                <div
-                  onDrop={(e: DragEvent) => {
-                    e.preventDefault()
-                    setDrag(false)
-                    read(e.dataTransfer.files?.[0])
-                  }}
-                  onDragOver={(e) => {
-                    e.preventDefault()
-                    setDrag(true)
-                  }}
-                  onDragLeave={() => setDrag(false)}
-                  className={`flex items-center gap-1 rounded-xl bg-[#141416] p-1 ring-1 transition ${drag ? 'ring-white/20' : err ? 'ring-red-500/40' : 'ring-white/[0.06]'
-                    }`}
-                >
-                  <input
-                    value={json}
-                    onChange={(e) => {
-                      setJson(e.target.value)
-                      setErr(false)
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') proc(json)
-                    }}
-                    placeholder="paste json or drop .keykap file..."
-                    className="h-7 min-w-0 flex-1 bg-transparent px-2 text-[11px] text-white/95 outline-none placeholder:text-[#8e8e93]"
-                  />
-
-                  <button
-                    onClick={() => proc(json)}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] transition hover:bg-white/10 hover:text-white shrink-0"
-                    title="import"
+                  <div
+                    style={getBlurItemStyle(3)}
+                    className={`space-y-2 pt-2 ${blurItemClass}`}
                   >
-                    <FaArrowRight className="h-3 w-3" />
-                  </button>
-
-                  <button
-                    onClick={() => ref.current?.click()}
-                    className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] transition hover:bg-white/10 hover:text-white shrink-0"
-                    title="choose file"
-                  >
-                    <FaFileCode className="h-3 w-3" />
-                  </button>
-
-                  <input
-                    ref={ref}
-                    type="file"
-                    accept=".json,.keykap,application/json"
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      read(e.target.files?.[0])
-                    }
-                    className="hidden"
-                  />
-                </div>
-
-                {err && (
-                  <div className="px-0.5 text-[10px] text-red-400 font-medium">
-                    invalid format
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-1.5 pt-2">
-                <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
-                  saved layouts
-                </label>
-
-                <div className="space-y-1">
-                  {boards.length === 0 ? (
-                    <div className="py-3 text-center text-[10px] text-[#8e8e93]">
-                      no layouts found.
-                    </div>
-                  ) : (
-                    boards.map((b) => {
-                      const activeItem = active === b.id
-
-                      return (
-                        <div
-                          key={b.id}
-                          className={`group flex items-center gap-2 rounded-xl px-2.5 py-2 ring-1 transition ${activeItem
-                              ? 'bg-white/10 ring-white/[0.08]'
-                              : 'bg-[#141416] ring-white/[0.04] hover:bg-[#1a1a1e]'
-                            }`}
-                        >
-                          <input
-                            type="text"
-                            value={b.name}
-                            onChange={(e) => rename(b.id, e.target.value)}
-                            className="min-w-0 flex-1 bg-transparent px-1 text-[11px] text-white/95 outline-none"
-                          />
-
-                          <div className="flex items-center gap-1 shrink-0">
-                            <button
-                              onClick={() => open(b.id)}
-                              className={`rounded-lg px-2.5 py-1 text-[10px] font-medium transition ${activeItem
-                                  ? 'bg-white/20 text-white'
-                                  : 'text-[#8e8e93] hover:bg-white/10 hover:text-white'
-                                }`}
-                            >
-                              {activeItem ? 'loaded' : 'load'}
-                            </button>
-
-                            <button
-                              onClick={() => exportFile(b.id)}
-                              className="flex h-6 w-6 items-center justify-center rounded-lg text-[#8e8e93] transition hover:bg-white/10 hover:text-white"
-                              title="export keykap"
-                            >
-                              <FaDownload className="h-2.5 w-2.5" />
-                            </button>
+                    <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                      Custom Palette
+                    </span>
+                    <input
+                      type="text"
+                      value={inputName}
+                      onChange={(e) => setInputName(e.target.value)}
+                      placeholder="Palette name"
+                      className="h-8 w-full bg-zinc-900 text-zinc-100 rounded-xl px-3 text-[11px] outline-none placeholder:text-zinc-600 focus:bg-zinc-800 transition"
+                    />
+                    <div className="bg-zinc-900 rounded-xl p-1 space-y-0.5">
+                      {[
+                        ['base', baseBg, baseFg, setBaseBg, setBaseFg],
+                        ['mods', modsBg, modsFg, setModsBg, setModsFg],
+                        ['accent', accentBg, accentFg, setAccentBg, setAccentFg]
+                      ].map(([label, bg, fg, setBg, setFg]) => (
+                        <div key={label as string} className="flex h-7 items-center justify-between px-2.5 rounded-lg hover:bg-zinc-800">
+                          <span className="text-[11px] text-zinc-300 capitalize">{label as string}</span>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="color"
+                              value={bg as string}
+                              onChange={(e) => (setBg as (v: string) => void)(e.target.value)}
+                              className="h-3.5 w-3.5 cursor-pointer appearance-none rounded-md bg-transparent border-0 p-0"
+                            />
+                            <input
+                              type="color"
+                              value={fg as string}
+                              onChange={(e) => (setFg as (v: string) => void)(e.target.value)}
+                              className="h-3.5 w-3.5 cursor-pointer appearance-none rounded-md bg-transparent border-0 p-0"
+                            />
                           </div>
-
-                          <button
-                            onClick={() => drop(b.id)}
-                            className="flex h-6 w-6 items-center justify-center rounded-lg text-[#8e8e93] transition hover:bg-red-500/10 hover:text-red-400"
-                            title="delete layout"
-                          >
-                            <FaTrash className="h-2.5 w-2.5" />
-                          </button>
                         </div>
-                      )
-                    })
-                  )}
+                      ))}
+                    </div>
+                    <button
+                      onClick={create}
+                      className="w-full rounded-xl bg-zinc-900 hover:bg-zinc-800 py-2 text-[11px] font-semibold text-zinc-200 transition active:scale-[0.98]"
+                    >
+                      Save Palette
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </div>
-          )}
-        </main>
+              )}
 
-        <footer className="flex h-11 items-center justify-between border-t border-white/[0.06] px-5">
-          <span className="text-[10px] text-[#8e8e93]">made with love by ary</span>
-        </footer>
-      </aside>
+              {tab === 'boards' && (
+                <div className="space-y-3">
+                  <div
+                    style={getBlurItemStyle(2)}
+                    className={`space-y-1 ${blurItemClass}`}
+                  >
+                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                      Import
+                    </label>
+                    <div
+                      onDrop={(e: DragEvent) => {
+                        e.preventDefault()
+                        setDrag(false)
+                        read(e.dataTransfer.files?.[0])
+                      }}
+                      onDragOver={(e) => {
+                        e.preventDefault()
+                        setDrag(true)
+                      }}
+                      onDragLeave={() => setDrag(false)}
+                      className={`flex items-center gap-1.5 rounded-xl bg-zinc-900 p-1.5 transition ${
+                        drag ? 'bg-zinc-800' : err ? 'bg-red-950' : ''
+                      }`}
+                    >
+                      <input
+                        value={json}
+                        onChange={(e) => {
+                          setJson(e.target.value)
+                          setErr(false)
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') proc(json)
+                        }}
+                        placeholder="Paste JSON or drop..."
+                        className="h-7 min-w-0 flex-1 bg-transparent px-2 text-[11px] text-zinc-100 outline-none placeholder:text-zinc-600"
+                      />
+                      <button
+                        onClick={() => proc(json)}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-700 transition shrink-0"
+                      >
+                        <FiArrowRight className="h-3.5 w-3.5" />
+                      </button>
+                      <button
+                        onClick={() => ref.current?.click()}
+                        className="flex h-7 w-7 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-700 transition shrink-0"
+                      >
+                        <FiCode className="h-3.5 w-3.5" />
+                      </button>
+                      <input
+                        ref={ref}
+                        type="file"
+                        accept=".json,.keykap,application/json"
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => read(e.target.files?.[0])}
+                        className="hidden"
+                      />
+                    </div>
+                    {err && <div className="px-1 text-[9px] text-red-400">Invalid format</div>}
+                  </div>
+
+                  <div
+                    style={getBlurItemStyle(3)}
+                    className={`space-y-1 ${blurItemClass}`}
+                  >
+                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                      Layouts List
+                    </label>
+                    <div className="space-y-1">
+                      {boards.length === 0 ? (
+                        <div className="py-4 text-center text-[10px] font-mono text-zinc-600">
+                          No layouts found.
+                        </div>
+                      ) : (
+                        boards.map((b) => {
+                          const activeItem = active === b.id
+                          return (
+                            <div
+                              key={b.id}
+                              className={`flex items-center justify-between rounded-xl bg-zinc-900 p-2 transition ${
+                                activeItem ? 'bg-zinc-800' : 'hover:bg-zinc-850'
+                              }`}
+                            >
+                              <input
+                                type="text"
+                                value={b.name}
+                                onChange={(e) => rename(b.id, e.target.value)}
+                                className="min-w-0 flex-1 bg-transparent px-1 text-[11px] font-medium text-zinc-100 outline-none"
+                              />
+                              <div className="flex items-center gap-1 shrink-0">
+                                <button
+                                  onClick={() => open(b.id)}
+                                  className={`rounded-lg px-2.5 py-1 text-[9px] font-semibold transition ${
+                                    activeItem
+                                      ? 'bg-zinc-100 text-zinc-950'
+                                      : 'bg-zinc-800 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-700'
+                                  }`}
+                                >
+                                  {activeItem ? 'loaded' : 'load'}
+                                </button>
+                                <button
+                                  onClick={() => exportFile(b.id)}
+                                  className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition"
+                                >
+                                  <FiDownload className="h-3 w-3" />
+                                </button>
+                                <button
+                                  onClick={() => drop(b.id)}
+                                  className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-800 text-zinc-500 hover:text-red-400 hover:bg-zinc-700 transition"
+                                >
+                                  <FiTrash2 className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
+                          )
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div
+              style={getBlurItemStyle(8)}
+              className={`flex h-10 shrink-0 items-center justify-center px-3 ${blurItemClass}`}
+            >
+              <span className="text-[10px] text-zinc-600 font-medium tracking-wide">made with ♡ by ary</span>
+            </div>
+          </div>
+        )}
+      </div>
     </>
   )
 }

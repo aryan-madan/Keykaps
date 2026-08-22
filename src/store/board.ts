@@ -233,6 +233,8 @@ export const useBoard = create<State>((set, get) => ({
 
   init: async () => {
     const files = ['noel65', 'olivia60', 'port65', 'tofu64']
+    let loadedFirstId: string | null = null
+
     for (const file of files) {
       try {
         const res = await fetch(`/layouts/${file}.keykap`)
@@ -245,13 +247,19 @@ export const useBoard = create<State>((set, get) => ({
               const updated = [...current, data]
               write(updated)
               set({ boards: updated })
-              if (!get().active) {
-                get().open(data.id)
-              }
+            }
+            if (!loadedFirstId) {
+              loadedFirstId = data.id
             }
           }
         }
       } catch { }
+    }
+
+    const currentBoards = get().boards
+    if (!get().active && currentBoards.length > 0) {
+      const targetId = loadedFirstId || currentBoards[0].id
+      get().open(targetId)
     }
   }
 }))
