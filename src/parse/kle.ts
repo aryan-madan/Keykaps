@@ -2,8 +2,9 @@ import { Serial } from '@ijprest/kle-serial'
 import { row } from './row'
 import type { Key } from '../store/board'
 
-export function parse(json: string): Key[] {
-  const board = Serial.deserialize(JSON.parse(json))
+export function parse(raw: any): Key[] {
+  const data = typeof raw === 'string' ? JSON.parse(raw) : raw
+  const board = Serial.deserialize(data)
   return board.keys.map((k: any, i: number) => {
     const labels = (k.labels || [])
       .filter((l: any) => typeof l === 'string' && l.trim() !== '')

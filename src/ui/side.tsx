@@ -1,18 +1,19 @@
 import { useState, useEffect, useRef, type ChangeEvent, type DragEvent } from 'react'
-import { useBoard, type Scheme } from '../store/board'
+import { useBoard, type Scheme, type Saved } from '../store/board'
 import { parse } from '../parse/kle'
-import { 
-  FaBars, 
-  FaTimes, 
-  FaFileCode, 
-  FaTrash, 
+import { dump } from '../parse/export'
+import {
+  FaBars,
+  FaTimes,
+  FaFileCode,
+  FaTrash,
   FaCheck,
   FaArrowRight,
   FaDownload
 } from 'react-icons/fa'
 
 export function Side() {
-  const [open, setOpen] = useState(false)
+  const [show, setShow] = useState(false)
   const [tab, setTab] = useState('editor')
 
   const {
@@ -23,23 +24,24 @@ export function Side() {
     shell,
     boards,
     active,
-    loadBoard,
-    rename,
-    remove,
+    open,
+    name: rename,
+    drop,
     schemes,
-    addScheme,
-    applyScheme,
+    add,
+    apply,
     scheme,
-    persist,
     keys,
     selected,
-    paintLegend,
+    legend,
     load,
-    envBg,
-    setEnvBg
+    env,
+    envSet,
+    shape,
+    case: kase
   } = useBoard()
 
-  const [name, setName] = useState('')
+  const [inputName, setInputName] = useState('')
   const [baseBg, setBaseBg] = useState('#1c1c1e')
   const [baseFg, setBaseFg] = useState('#f5f5f7')
   const [modsBg, setModsBg] = useState('#2c2c2e')
@@ -47,20 +49,20 @@ export function Side() {
   const [accentBg, setAccentBg] = useState('#0a84ff')
   const [accentFg, setAccentFg] = useState('#ffffff')
 
-  const selectedKey = keys.find((k) => k.id === selected)
-  const [legendText, setLegendText] = useState('')
+  const item = keys.find((k) => k.id === selected)
+  const [text, setText] = useState('')
 
-  const [jsonText, setJsonText] = useState('')
+  const [json, setJson] = useState('')
   const [err, setErr] = useState(false)
   const [drag, setDrag] = useState(false)
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const ref = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (selectedKey) {
-      setLegendText(selectedKey.legend || '')
-      setOpen(true)
+    if (item) {
+      setText(item.legend || '')
+      setShow(true)
     }
-  }, [selectedKey])
+  }, [item])
 
   useEffect(() => {
     const files = ['olivia', 'port', 'prussian']
@@ -70,20 +72,20 @@ export function Side() {
         .then((res) => res.json())
         .then((data) => {
           if (data?.id) {
-            addScheme(data)
-            applyScheme(data)
+            add(data)
+            apply(data)
           }
         })
-        .catch(() => {})
+        .catch(() => { })
     })
-  }, [addScheme, applyScheme])
+  }, [add, apply])
 
   function create() {
-    if (!name.trim()) return
+    if (!inputName.trim()) return
 
-    const item: Scheme = {
-      id: name.toLowerCase().replace(/\s+/g, '-'),
-      label: name,
+    const scheme: Scheme = {
+      id: inputName.toLowerCase().replace(/\s+/g, '-'),
+      label: inputName,
       manufacturer: 'custom',
       swatches: {
         base: { background: baseBg, color: baseFg },
@@ -93,80 +95,85 @@ export function Side() {
       override: {}
     }
 
-    addScheme(item)
-    applyScheme(item)
-    setName('')
+    add(scheme)
+    apply(scheme)
+    setInputName('')
   }
 
-  function processJson(raw: string) {
+  function proc(raw: string) {
     if (!raw.trim()) return
 
     try {
-      load(parse(raw))
+      const data = JSON.parse(raw)
+      if (data && Array.isArray(data.keys)) {
+        const saved: Saved = data
+        const current = useBoard.getState().boards
+        const exists = current.some((b) => b.id === saved.id)
+        const updated = exists ? current : [...current, saved]
+        useBoard.setState({ boards: updated })
+        open(saved.id)
+      } else {
+        const result = parse(data)
+        load(result)
+      }
       setErr(false)
-      setJsonText('')
+      setJson('')
     } catch {
       setErr(true)
     }
   }
 
-  function readFile(file?: File) {
+  function read(file?: File) {
     if (!file) return
     const reader = new FileReader()
     reader.onload = (e) => {
       const content = e.target?.result as string
-      if (content) processJson(content)
+      if (content) proc(content)
     }
     reader.readAsText(file)
   }
 
-  function exportJson(boardId: string) {
-    const targetBoard = boards.find((b) => b.id === boardId)
-    const exportData = {
-      name: targetBoard ? targetBoard.name : 'keyboard-layout',
-      keys: keys.map(({ id, x, y, w, h, row, color, textColor, legend }) => ({
-        id,
-        x,
-        y,
-        w,
-        h,
-        row,
-        color,
-        textColor,
-        legend
-      }))
+  function exportFile(id: string) {
+    const target = boards.find((b) => b.id === id)
+    if (!target) return
+    const saved: Saved = {
+      id: target.id,
+      name: target.name,
+      keys: active === target.id ? keys : target.keys,
+      case: active === target.id ? kase : target.case,
+      shape: active === target.id ? shape : target.shape
     }
+    const str = dump(saved)
 
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(exportData, null, 2))
-    const downloadAnchor = document.createElement('a')
-    downloadAnchor.setAttribute('href', dataStr)
-    downloadAnchor.setAttribute('download', `${(targetBoard?.name || 'keyboard').toLowerCase().replace(/\s+/g, '-')}.json`)
-    document.body.appendChild(downloadAnchor)
-    downloadAnchor.click()
-    downloadAnchor.remove()
+    const uri = 'data:text/json;charset=utf-8,' + encodeURIComponent(str)
+    const anchor = document.createElement('a')
+    anchor.setAttribute('href', uri)
+    anchor.setAttribute('download', `${target.name.toLowerCase().replace(/\s+/g, '-')}.keykap`)
+    document.body.appendChild(anchor)
+    anchor.click()
+    anchor.remove()
   }
 
-  const activeScheme = schemes.find((s) => s.id === scheme)
+  const currentScheme = schemes.find((s) => s.id === scheme)
 
   return (
     <>
       <button
-        onClick={() => setOpen(!open)}
+        onClick={() => setShow(!show)}
         className="fixed left-4 top-4 z-45 flex h-9 w-9 items-center justify-center rounded-2xl bg-[#0a0a0c]/90 text-[#8e8e93] shadow-lg ring-1 ring-white/10 backdrop-blur-md transition hover:bg-[#141416] hover:text-white active:scale-95"
       >
         <FaBars className="h-3.5 w-3.5" />
       </button>
 
       <aside
-        className={`fixed left-0 top-0 z-50 flex h-full w-80 flex-col bg-[#0d0d0f]/95 text-[#f5f5f7] shadow-2xl ring-1 ring-white/[0.08] backdrop-blur-xl transition-transform duration-300 ease-out ${
-          open ? 'translate-x-0' : '-translate-x-full'
-        }`}
+        className={`fixed left-0 top-0 z-50 flex h-full w-80 flex-col bg-[#0d0d0f]/95 text-[#f5f5f7] shadow-2xl ring-1 ring-white/[0.08] backdrop-blur-xl transition-transform duration-300 ease-out ${show ? 'translate-x-0' : '-translate-x-full'
+          }`}
       >
         <header className="flex h-14 items-center justify-between border-b border-white/[0.06] px-5">
           <h1 className="text-[13px] font-medium tracking-tight text-white/95">keykaps</h1>
 
           <button
-            onClick={() => setOpen(false)}
+            onClick={() => setShow(false)}
             className="flex h-7 w-7 items-center justify-center rounded-xl text-[#8e8e93] transition hover:bg-white/10 hover:text-white"
           >
             <FaTimes className="h-3.5 w-3.5" />
@@ -183,11 +190,10 @@ export function Side() {
               <button
                 key={value}
                 onClick={() => setTab(value)}
-                className={`flex-1 flex items-center justify-center rounded-xl py-1.5 text-[11px] font-medium transition ${
-                  tab === value
+                className={`flex-1 flex items-center justify-center rounded-xl py-1.5 text-[11px] font-medium transition ${tab === value
                     ? 'bg-[#222226] text-white shadow-md ring-1 ring-white/[0.08]'
                     : 'text-[#8e8e93] hover:text-white'
-                }`}
+                  }`}
               >
                 <span>{label}</span>
               </button>
@@ -233,11 +239,11 @@ export function Side() {
                   environment background
                 </label>
                 <button
-                  onClick={() => setEnvBg(!envBg)}
+                  onClick={() => envSet(!env)}
                   className="flex h-8 w-full items-center justify-between rounded-xl bg-[#141416] px-3 text-[11px] ring-1 ring-white/[0.06] transition hover:bg-[#1a1a1e]"
                 >
                   <span className="font-medium text-white/95">
-                    {envBg ? 'enabled' : 'disabled'}
+                    {env ? 'enabled' : 'disabled'}
                   </span>
                   <span className="text-[10px] text-[#8e8e93] font-mono lowercase">click to toggle</span>
                 </button>
@@ -247,13 +253,13 @@ export function Side() {
                 <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
                   key legend
                 </label>
-                {selectedKey ? (
+                {item ? (
                   <input
                     type="text"
-                    value={legendText}
+                    value={text}
                     onChange={(e) => {
-                      setLegendText(e.target.value)
-                      paintLegend(selectedKey.id, e.target.value)
+                      setText(e.target.value)
+                      legend(item.id, e.target.value)
                     }}
                     placeholder="enter text..."
                     className="h-8 w-full rounded-xl bg-[#141416] px-3 text-[11px] text-white/95 ring-1 ring-white/[0.06] outline-none transition focus:bg-[#1a1a1e] focus:ring-white/25"
@@ -288,22 +294,20 @@ export function Side() {
                 <label className="text-[10px] font-medium tracking-wide text-[#8e8e93] px-0.5">
                   active brush
                 </label>
-                {activeScheme ? (
+                {currentScheme ? (
                   <div className="overflow-hidden rounded-2xl bg-[#141416] ring-1 ring-white/[0.06]">
-                    {Object.entries(activeScheme.swatches).map(([name, swatch], index) => {
+                    {Object.entries(currentScheme.swatches).map(([name, swatch], index) => {
                       const activeBrush = brush.name === name
 
                       return (
                         <button
                           key={name}
                           onClick={() => brushSet({ name, swatch })}
-                          className={`flex h-8 w-full items-center justify-between px-3 text-[11px] transition ${
-                            index > 0 ? 'border-t border-white/[0.04]' : ''
-                          } ${
-                            activeBrush
+                          className={`flex h-8 w-full items-center justify-between px-3 text-[11px] transition ${index > 0 ? 'border-t border-white/[0.04]' : ''
+                            } ${activeBrush
                               ? 'bg-white/10 font-medium text-white'
                               : 'text-[#8e8e93] hover:bg-white/[0.04] hover:text-white'
-                          }`}
+                            }`}
                         >
                           <span className="capitalize">{name}</span>
                           <span className="flex items-center gap-1.5">
@@ -324,17 +328,6 @@ export function Side() {
                   <div className="text-[10px] text-[#8e8e93]">no color palette loaded.</div>
                 )}
               </div>
-
-              {active && (
-                <div className="pt-1">
-                  <button
-                    onClick={persist}
-                    className="w-full rounded-xl bg-white/10 py-2 text-[11px] font-medium text-white ring-1 ring-white/[0.08] transition hover:bg-white/20 active:scale-[0.98]"
-                  >
-                    save layout
-                  </button>
-                </div>
-              )}
             </div>
           )}
 
@@ -345,20 +338,19 @@ export function Side() {
                   color presets
                 </label>
                 <div className="space-y-1">
-                  {schemes.map((item) => {
-                    const activeItem = scheme === item.id
+                  {schemes.map((s) => {
+                    const activeItem = scheme === s.id
 
                     return (
                       <button
-                        key={item.id}
-                        onClick={() => applyScheme(item)}
-                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-[11px] transition ${
-                          activeItem
+                        key={s.id}
+                        onClick={() => apply(s)}
+                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-[11px] transition ${activeItem
                             ? 'bg-white/10 font-medium text-white ring-1 ring-white/[0.08]'
                             : 'bg-[#141416] text-[#8e8e93] ring-1 ring-white/[0.04] hover:bg-[#1a1a1e] hover:text-white'
-                        }`}
+                          }`}
                       >
-                        <span>{item.label}</span>
+                        <span>{s.label}</span>
                         {activeItem && (
                           <span className="flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[9px] text-white">
                             <FaCheck className="h-2 w-2" />
@@ -378,8 +370,8 @@ export function Side() {
 
                 <input
                   type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={inputName}
+                  onChange={(e) => setInputName(e.target.value)}
                   placeholder="palette name..."
                   className="h-8 w-full rounded-xl bg-[#141416] px-3 text-[11px] text-white/95 ring-1 ring-white/[0.06] outline-none transition focus:bg-[#1a1a1e] focus:ring-white/25"
                 />
@@ -437,32 +429,31 @@ export function Side() {
                   onDrop={(e: DragEvent) => {
                     e.preventDefault()
                     setDrag(false)
-                    readFile(e.dataTransfer.files?.[0])
+                    read(e.dataTransfer.files?.[0])
                   }}
                   onDragOver={(e) => {
                     e.preventDefault()
                     setDrag(true)
                   }}
                   onDragLeave={() => setDrag(false)}
-                  className={`flex items-center gap-1 rounded-xl bg-[#141416] p-1 ring-1 transition ${
-                    drag ? 'ring-white/20' : err ? 'ring-red-500/40' : 'ring-white/[0.06]'
-                  }`}
+                  className={`flex items-center gap-1 rounded-xl bg-[#141416] p-1 ring-1 transition ${drag ? 'ring-white/20' : err ? 'ring-red-500/40' : 'ring-white/[0.06]'
+                    }`}
                 >
                   <input
-                    value={jsonText}
+                    value={json}
                     onChange={(e) => {
-                      setJsonText(e.target.value)
+                      setJson(e.target.value)
                       setErr(false)
                     }}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') processJson(jsonText)
+                      if (e.key === 'Enter') proc(json)
                     }}
-                    placeholder="paste kle json or drop file..."
+                    placeholder="paste json or drop .keykap file..."
                     className="h-7 min-w-0 flex-1 bg-transparent px-2 text-[11px] text-white/95 outline-none placeholder:text-[#8e8e93]"
                   />
 
                   <button
-                    onClick={() => processJson(jsonText)}
+                    onClick={() => proc(json)}
                     className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] transition hover:bg-white/10 hover:text-white shrink-0"
                     title="import"
                   >
@@ -470,7 +461,7 @@ export function Side() {
                   </button>
 
                   <button
-                    onClick={() => fileInputRef.current?.click()}
+                    onClick={() => ref.current?.click()}
                     className="flex h-7 w-7 items-center justify-center rounded-lg text-[#8e8e93] transition hover:bg-white/10 hover:text-white shrink-0"
                     title="choose file"
                   >
@@ -478,11 +469,11 @@ export function Side() {
                   </button>
 
                   <input
-                    ref={fileInputRef}
+                    ref={ref}
                     type="file"
-                    accept=".json,application/json"
+                    accept=".json,.keykap,application/json"
                     onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      readFile(e.target.files?.[0])
+                      read(e.target.files?.[0])
                     }
                     className="hidden"
                   />
@@ -506,48 +497,46 @@ export function Side() {
                       no layouts found.
                     </div>
                   ) : (
-                    boards.map((item) => {
-                      const activeItem = active === item.id
+                    boards.map((b) => {
+                      const activeItem = active === b.id
 
                       return (
                         <div
-                          key={item.id}
-                          className={`group flex items-center gap-2 rounded-xl px-2.5 py-2 ring-1 transition ${
-                            activeItem
+                          key={b.id}
+                          className={`group flex items-center gap-2 rounded-xl px-2.5 py-2 ring-1 transition ${activeItem
                               ? 'bg-white/10 ring-white/[0.08]'
                               : 'bg-[#141416] ring-white/[0.04] hover:bg-[#1a1a1e]'
-                          }`}
+                            }`}
                         >
                           <input
                             type="text"
-                            value={item.name}
-                            onChange={(e) => rename(item.id, e.target.value)}
+                            value={b.name}
+                            onChange={(e) => rename(b.id, e.target.value)}
                             className="min-w-0 flex-1 bg-transparent px-1 text-[11px] text-white/95 outline-none"
                           />
 
                           <div className="flex items-center gap-1 shrink-0">
                             <button
-                              onClick={() => loadBoard(item.id)}
-                              className={`rounded-lg px-2.5 py-1 text-[10px] font-medium transition ${
-                                activeItem
+                              onClick={() => open(b.id)}
+                              className={`rounded-lg px-2.5 py-1 text-[10px] font-medium transition ${activeItem
                                   ? 'bg-white/20 text-white'
                                   : 'text-[#8e8e93] hover:bg-white/10 hover:text-white'
-                              }`}
+                                }`}
                             >
                               {activeItem ? 'loaded' : 'load'}
                             </button>
 
                             <button
-                              onClick={() => exportJson(item.id)}
+                              onClick={() => exportFile(b.id)}
                               className="flex h-6 w-6 items-center justify-center rounded-lg text-[#8e8e93] transition hover:bg-white/10 hover:text-white"
-                              title="export json"
+                              title="export keykap"
                             >
                               <FaDownload className="h-2.5 w-2.5" />
                             </button>
                           </div>
 
                           <button
-                            onClick={() => remove(item.id)}
+                            onClick={() => drop(b.id)}
                             className="flex h-6 w-6 items-center justify-center rounded-lg text-[#8e8e93] transition hover:bg-red-500/10 hover:text-red-400"
                             title="delete layout"
                           >

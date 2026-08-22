@@ -19,7 +19,7 @@ export type Key = {
   row: number
 }
 
-type Shape = {
+export type Shape = {
   pad: number
   inset: number
   wall: number
@@ -47,7 +47,7 @@ export type Scheme = {
   override?: Record<string, string>
 }
 
-type BoardState = {
+export type State = {
   keys: Key[]
   case: string
   shape: Shape
@@ -59,28 +59,29 @@ type BoardState = {
   schemes: Scheme[]
   scheme: string | null
   background: string
-  envBg: boolean
+  env: boolean
   load: (keys: Key[]) => void
   paint: (id: string, color: string, textColor: string) => void
   select: (id: string | null) => void
-  paintLegend: (id: string, legend: string) => void
+  legend: (id: string, text: string) => void
   shell: (color: string) => void
-  reshape: (shape: Partial<Shape>) => void
+  mold: (shape: Partial<Shape>) => void
   modeSet: (mode: string) => void
   brushSet: (brush: { name: string; swatch: Swatch }) => void
-  setEnvBg: (envBg: boolean) => void
+  envSet: (env: boolean) => void
   save: (name: string, keys: Key[], kase: string, shape: Shape) => void
-  loadBoard: (id: string) => void
-  rename: (id: string, name: string) => void
-  remove: (id: string) => void
-  addScheme: (scheme: Scheme) => void
-  applyScheme: (scheme: Scheme) => void
-  persist: () => void
+  open: (id: string) => void
+  name: (id: string, text: string) => void
+  drop: (id: string) => void
+  add: (scheme: Scheme) => void
+  apply: (scheme: Scheme) => void
+  store: () => void
+  init: () => Promise<void>
 }
 
 const KEY = 'kb_boards'
 
-function getBoards(): Saved[] {
+function read(): Saved[] {
   try {
     const data = localStorage.getItem(KEY)
     return data ? JSON.parse(data) : []
@@ -89,126 +90,120 @@ function getBoards(): Saved[] {
   }
 }
 
-function setBoards(boards: Saved[]) {
+function write(boards: Saved[]) {
   try {
     localStorage.setItem(KEY, JSON.stringify(boards))
-  } catch {}
+  } catch { }
 }
 
-export const useBoard = create<BoardState>((set, get) => ({
+export const useBoard = create<State>((set, get) => ({
   keys: [],
   case: '#e6e6e6',
   shape: { pad: 0.3, inset: 0, wall: 0.15, height: 1.0 },
   selected: null,
   mode: 'view',
   brush: { name: 'base', swatch: { background: '#3b82f6', color: '#ffffff' } },
-  boards: getBoards(),
+  boards: read(),
   active: null,
   schemes: [],
   scheme: null,
   background: '#09090b',
-  envBg: false,
+  env: false,
 
   load: (keys) => {
     const id = Math.random().toString(36).substring(2, 9)
     const name = `board ${get().boards.length + 1}`
     const kase = get().case
     const shape = get().shape
-    const mappedKeys = keys.map((k) => ({ ...k, textColor: k.textColor || '#222222' }))
-    
-    const colorCounts: Record<string, number> = {}
-    mappedKeys.forEach((k) => {
+    const mapped = keys.map((k) => ({ ...k, textColor: k.textColor || '#222222' }))
+    const counts: Record<string, number> = {}
+    mapped.forEach((k) => {
       if (k.color) {
-        colorCounts[k.color] = (colorCounts[k.color] || 0) + 1
+        counts[k.color] = (counts[k.color] || 0) + 1
       }
     })
-    
     let bg = '#09090b'
-    let minCount = Infinity
-    for (const [col, count] of Object.entries(colorCounts)) {
-      if (count < minCount) {
-        minCount = count
+    let min = Infinity
+    for (const [col, count] of Object.entries(counts)) {
+      if (count < min) {
+        min = count
         bg = col
       }
     }
-
-    const item: Saved = { id, name, keys: mappedKeys, case: kase, shape }
+    const item: Saved = { id, name, keys: mapped, case: kase, shape }
     const boards = [...get().boards, item]
-    setBoards(boards)
-    set({ keys: mappedKeys, boards, active: id, background: bg })
+    write(boards)
+    set({ keys: mapped, boards, active: id, background: bg })
   },
 
   paint: (id, color, textColor) => set((state) => ({
-    keys: state.keys.map((key) => key.id === id ? { ...key, color, textColor } : key)
+    keys: state.keys.map((k) => k.id === id ? { ...k, color, textColor } : k)
   })),
 
   select: (id) => set({ selected: id }),
 
-  paintLegend: (id, legend) => set((state) => ({
-    keys: state.keys.map((k) => k.id === id ? { ...k, legend } : k)
+  legend: (id, text) => set((state) => ({
+    keys: state.keys.map((k) => k.id === id ? { ...k, legend: text } : k)
   })),
 
   shell: (color) => set({ case: color }),
 
-  reshape: (shape) => set((state) => ({ shape: { ...state.shape, ...shape } })),
+  mold: (shape) => set((state) => ({ shape: { ...state.shape, ...shape } })),
 
   modeSet: (mode) => set({ mode }),
 
   brushSet: (brush) => set({ brush }),
 
-  setEnvBg: (envBg) => set({ envBg }),
+  envSet: (env) => set({ env }),
 
   save: (name, keys, kase, shape) => {
     const id = Math.random().toString(36).substring(2, 9)
     const item: Saved = { id, name, keys, case: kase, shape }
     const boards = [...get().boards, item]
-    setBoards(boards)
+    write(boards)
     set({ boards, active: id })
   },
 
-  loadBoard: (id) => {
+  open: (id) => {
     const target = get().boards.find((b) => b.id === id)
     if (target) {
-      const mappedKeys = target.keys.map((k) => ({ ...k, textColor: k.textColor || '#222222' }))
-      
-      const colorCounts: Record<string, number> = {}
-      mappedKeys.forEach((k) => {
+      const mapped = target.keys.map((k) => ({ ...k, textColor: k.textColor || '#222222' }))
+      const counts: Record<string, number> = {}
+      mapped.forEach((k) => {
         if (k.color) {
-          colorCounts[k.color] = (colorCounts[k.color] || 0) + 1
+          counts[k.color] = (counts[k.color] || 0) + 1
         }
       })
-      
       let bg = get().background
-      let minCount = Infinity
-      for (const [col, count] of Object.entries(colorCounts)) {
-        if (count < minCount) {
-          minCount = count
+      let min = Infinity
+      for (const [col, count] of Object.entries(counts)) {
+        if (count < min) {
+          min = count
           bg = col
         }
       }
-
-      set({ keys: mappedKeys, case: target.case, shape: target.shape, active: target.id, background: bg })
+      set({ keys: mapped, case: target.case, shape: target.shape, active: target.id, background: bg })
     }
   },
 
-  rename: (id, name) => {
-    const boards = get().boards.map((b) => b.id === id ? { ...b, name } : b)
-    setBoards(boards)
+  name: (id, text) => {
+    const boards = get().boards.map((b) => b.id === id ? { ...b, name: text } : b)
+    write(boards)
     set({ boards })
   },
 
-  remove: (id) => {
+  drop: (id) => {
     const boards = get().boards.filter((b) => b.id !== id)
-    setBoards(boards)
+    write(boards)
     set({ boards, active: get().active === id ? null : get().active })
   },
 
-  addScheme: (scheme) => set((state) => {
+  add: (scheme) => set((state) => {
     if (state.schemes.some((s) => s.id === scheme.id)) return state
     return { schemes: [...state.schemes, scheme] }
   }),
 
-  applyScheme: (scheme) => set((state) => {
+  apply: (scheme) => set((state) => {
     const override = scheme.override || {}
     const updated = state.keys.map((k) => {
       let name = 'base'
@@ -218,8 +213,8 @@ export const useBoard = create<BoardState>((set, get) => ({
         name = 'mods'
       }
       const swatch = scheme.swatches[name] || scheme.swatches['base']
-      return { 
-        ...k, 
+      return {
+        ...k,
         color: swatch ? swatch.background : k.color,
         textColor: swatch ? swatch.color : (k.textColor || '#222222')
       }
@@ -228,11 +223,39 @@ export const useBoard = create<BoardState>((set, get) => ({
     return { keys: updated, scheme: scheme.id, background: bg }
   }),
 
-  persist: () => {
+  store: () => {
     const { active, keys, case: kase, shape, boards } = get()
     if (!active) return
     const updated = boards.map((b) => b.id === active ? { ...b, keys, case: kase, shape } : b)
-    setBoards(updated)
+    write(updated)
     set({ boards: updated })
+  },
+
+  init: async () => {
+    const files = ['noel65', 'olivia60', 'port65', 'tofu64']
+    for (const file of files) {
+      try {
+        const res = await fetch(`/layouts/${file}.keykap`)
+        if (res.ok) {
+          const data: Saved = await res.json()
+          if (data && data.id && data.keys) {
+            const current = get().boards
+            const exists = current.some((b) => b.id === data.id || b.name.toLowerCase() === data.name.toLowerCase())
+            if (!exists) {
+              const updated = [...current, data]
+              write(updated)
+              set({ boards: updated })
+              if (!get().active) {
+                get().open(data.id)
+              }
+            }
+          }
+        }
+      } catch { }
+    }
   }
 }))
+
+if (typeof window !== 'undefined') {
+  useBoard.getState().init()
+}
