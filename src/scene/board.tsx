@@ -32,8 +32,8 @@ export function Board() {
     >
       <PerspectiveCamera
         makeDefault
-        position={[0, 8.5, 13]}
-        fov={50}
+        position={[0, 10, 22]}
+        fov={30}
       />
 
       <Environment
@@ -51,17 +51,17 @@ export function Board() {
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-camera-near={0.5}
-        shadow-camera-far={35}
-        shadow-camera-left={-10}
-        shadow-camera-right={10}
-        shadow-camera-top={10}
-        shadow-camera-bottom={-10}
+        shadow-camera-far={50}
+        shadow-camera-left={-15}
+        shadow-camera-right={15}
+        shadow-camera-top={15}
+        shadow-camera-bottom={-15}
         shadow-bias={-0.0001}
         shadow-normalBias={0.02}
       />
 
       <group
-        position={[-mid.x, -0.05, -mid.z]}
+        position={[-mid.x, -1.8, -mid.z]}
         castShadow
         receiveShadow
       >
@@ -79,20 +79,20 @@ export function Board() {
       </group>
 
       <ContactShadows
-        position={[0, -0.2, 0]}
+        position={[0, -2.0, 0]}
         opacity={0.8}
-        scale={18}
+        scale={25}
         blur={0.7}
-        far={4}
+        far={6}
         resolution={1024}
       />
 
       <OrbitControls
-        target={[0, 0, 0]}
+        target={[0, -1.8, 0]}
         enableDamping
         dampingFactor={0.05}
         minDistance={6}
-        maxDistance={25}
+        maxDistance={60}
       />
     </Canvas>
   )

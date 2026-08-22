@@ -96,85 +96,50 @@ function write(boards: Saved[]) {
   } catch { }
 }
 
-export const useBoard = create<State>((set, get) => ({
-  keys: [],
-  case: '#e6e6e6',
-  shape: { pad: 0.3, inset: 0, wall: 0.15, height: 1.0 },
-  selected: null,
-  mode: 'view',
-  brush: { name: 'base', swatch: { background: '#3b82f6', color: '#ffffff' } },
-  boards: read(),
-  active: null,
-  schemes: [],
-  scheme: null,
-  background: '#09090b',
-  env: false,
+export const useBoard = create<State>((set, get) => {
+  const syncAndWrite = (updatedKeys?: Key[], updatedCase?: string, updatedShape?: Shape) => {
+    const { active, boards, keys, case: currentCase, shape: currentShape } = get()
+    if (!active) return
 
-  load: (keys) => {
-    const id = Math.random().toString(36).substring(2, 9)
-    const name = `board ${get().boards.length + 1}`
-    const kase = get().case
-    const shape = get().shape
-    const mapped = keys.map((k) => ({ ...k, textColor: k.textColor || '#222222' }))
-    const counts: Record<string, number> = {}
-    mapped.forEach((k) => {
-      if (k.color) {
-        counts[k.color] = (counts[k.color] || 0) + 1
-      }
-    })
-    let bg = '#09090b'
-    let min = Infinity
-    for (const [col, count] of Object.entries(counts)) {
-      if (count < min) {
-        min = count
-        bg = col
-      }
-    }
-    const item: Saved = { id, name, keys: mapped, case: kase, shape }
-    const boards = [...get().boards, item]
-    write(boards)
-    set({ keys: mapped, boards, active: id, background: bg })
-  },
+    const finalKeys = updatedKeys ?? keys
+    const finalCase = updatedCase ?? currentCase
+    const finalShape = updatedShape ?? currentShape
 
-  paint: (id, color, textColor) => set((state) => ({
-    keys: state.keys.map((k) => k.id === id ? { ...k, color, textColor } : k)
-  })),
+    const updatedBoards = boards.map((b) =>
+      b.id === active ? { ...b, keys: finalKeys, case: finalCase, shape: finalShape } : b
+    )
 
-  select: (id) => set({ selected: id }),
+    write(updatedBoards)
+    set({ boards: updatedBoards })
+  }
 
-  legend: (id, text) => set((state) => ({
-    keys: state.keys.map((k) => k.id === id ? { ...k, legend: text } : k)
-  })),
+  return {
+    keys: [],
+    case: '#e6e6e6',
+    shape: { pad: 0.3, inset: 0, wall: 0.15, height: 1.0 },
+    selected: null,
+    mode: 'view',
+    brush: { name: 'base', swatch: { background: '#3b82f6', color: '#ffffff' } },
+    boards: read(),
+    active: null,
+    schemes: [],
+    scheme: null,
+    background: '#09090b',
+    env: false,
 
-  shell: (color) => set({ case: color }),
-
-  mold: (shape) => set((state) => ({ shape: { ...state.shape, ...shape } })),
-
-  modeSet: (mode) => set({ mode }),
-
-  brushSet: (brush) => set({ brush }),
-
-  envSet: (env) => set({ env }),
-
-  save: (name, keys, kase, shape) => {
-    const id = Math.random().toString(36).substring(2, 9)
-    const item: Saved = { id, name, keys, case: kase, shape }
-    const boards = [...get().boards, item]
-    write(boards)
-    set({ boards, active: id })
-  },
-
-  open: (id) => {
-    const target = get().boards.find((b) => b.id === id)
-    if (target) {
-      const mapped = target.keys.map((k) => ({ ...k, textColor: k.textColor || '#222222' }))
+    load: (keys) => {
+      const id = Math.random().toString(36).substring(2, 9)
+      const name = `board ${get().boards.length + 1}`
+      const kase = get().case
+      const shape = get().shape
+      const mapped = keys.map((k) => ({ ...k, textColor: k.textColor || '#222222' }))
       const counts: Record<string, number> = {}
       mapped.forEach((k) => {
         if (k.color) {
           counts[k.color] = (counts[k.color] || 0) + 1
         }
       })
-      let bg = get().background
+      let bg = '#09090b'
       let min = Infinity
       for (const [col, count] of Object.entries(counts)) {
         if (count < min) {
@@ -182,87 +147,153 @@ export const useBoard = create<State>((set, get) => ({
           bg = col
         }
       }
-      set({ keys: mapped, case: target.case, shape: target.shape, active: target.id, background: bg })
-    }
-  },
+      const item: Saved = { id, name, keys: mapped, case: kase, shape }
+      const boards = [...get().boards, item]
+      write(boards)
+      set({ keys: mapped, boards, active: id, background: bg })
+    },
 
-  name: (id, text) => {
-    const boards = get().boards.map((b) => b.id === id ? { ...b, name: text } : b)
-    write(boards)
-    set({ boards })
-  },
+    paint: (id, color, textColor) => {
+      const updatedKeys = get().keys.map((k) => (k.id === id ? { ...k, color, textColor } : k))
+      set({ keys: updatedKeys })
+      syncAndWrite(updatedKeys)
+    },
 
-  drop: (id) => {
-    const boards = get().boards.filter((b) => b.id !== id)
-    write(boards)
-    set({ boards, active: get().active === id ? null : get().active })
-  },
+    select: (id) => set({ selected: id }),
 
-  add: (scheme) => set((state) => {
-    if (state.schemes.some((s) => s.id === scheme.id)) return state
-    return { schemes: [...state.schemes, scheme] }
-  }),
+    legend: (id, text) => {
+      const updatedKeys = get().keys.map((k) => (k.id === id ? { ...k, legend: text } : k))
+      set({ keys: updatedKeys })
+      syncAndWrite(updatedKeys)
+    },
 
-  apply: (scheme) => set((state) => {
-    const override = scheme.override || {}
-    const updated = state.keys.map((k) => {
-      let name = 'base'
-      if (override[k.legend]) {
-        name = override[k.legend]
-      } else if (k.w > 1.5 || k.w2 > 1.5) {
-        name = 'mods'
-      }
-      const swatch = scheme.swatches[name] || scheme.swatches['base']
-      return {
-        ...k,
-        color: swatch ? swatch.background : k.color,
-        textColor: swatch ? swatch.color : (k.textColor || '#222222')
-      }
-    })
-    const bg = scheme.swatches.accent?.background || scheme.swatches.base?.background || state.background
-    return { keys: updated, scheme: scheme.id, background: bg }
-  }),
+    shell: (color) => {
+      set({ case: color })
+      syncAndWrite(undefined, color)
+    },
 
-  store: () => {
-    const { active, keys, case: kase, shape, boards } = get()
-    if (!active) return
-    const updated = boards.map((b) => b.id === active ? { ...b, keys, case: kase, shape } : b)
-    write(updated)
-    set({ boards: updated })
-  },
+    mold: (shape) => {
+      const updatedShape = { ...get().shape, ...shape }
+      set({ shape: updatedShape })
+      syncAndWrite(undefined, undefined, updatedShape)
+    },
 
-  init: async () => {
-    const files = ['noel65', 'olivia60', 'port65', 'tofu64']
-    let loadedFirstId: string | null = null
+    modeSet: (mode) => set({ mode }),
 
-    for (const file of files) {
-      try {
-        const res = await fetch(`/layouts/${file}.keykap`)
-        if (res.ok) {
-          const data: Saved = await res.json()
-          if (data && data.id && data.keys) {
-            const current = get().boards
-            const exists = current.some((b) => b.id === data.id || b.name.toLowerCase() === data.name.toLowerCase())
-            if (!exists) {
-              const updated = [...current, data]
-              write(updated)
-              set({ boards: updated })
-            }
-            if (!loadedFirstId) {
-              loadedFirstId = data.id
-            }
+    brushSet: (brush) => set({ brush }),
+
+    envSet: (env) => set({ env }),
+
+    save: (name, keys, kase, shape) => {
+      const id = Math.random().toString(36).substring(2, 9)
+      const item: Saved = { id, name, keys, case: kase, shape }
+      const boards = [...get().boards, item]
+      write(boards)
+      set({ boards, active: id })
+    },
+
+    open: (id) => {
+      const target = get().boards.find((b) => b.id === id)
+      if (target) {
+        const mapped = target.keys.map((k) => ({ ...k, textColor: k.textColor || '#222222' }))
+        const counts: Record<string, number> = {}
+        mapped.forEach((k) => {
+          if (k.color) {
+            counts[k.color] = (counts[k.color] || 0) + 1
+          }
+        })
+        let bg = get().background
+        let min = Infinity
+        for (const [col, count] of Object.entries(counts)) {
+          if (count < min) {
+            min = count
+            bg = col
           }
         }
-      } catch { }
-    }
+        set({ keys: mapped, case: target.case, shape: target.shape, active: target.id, background: bg })
+      }
+    },
 
-    const currentBoards = get().boards
-    if (!get().active && currentBoards.length > 0) {
-      const targetId = loadedFirstId || currentBoards[0].id
-      get().open(targetId)
+    name: (id, text) => {
+      const boards = get().boards.map((b) => (b.id === id ? { ...b, name: text } : b))
+      write(boards)
+      set({ boards })
+    },
+
+    drop: (id) => {
+      const boards = get().boards.filter((b) => b.id !== id)
+      write(boards)
+      set({ boards, active: get().active === id ? null : get().active })
+    },
+
+    add: (scheme) =>
+      set((state) => {
+        if (state.schemes.some((s) => s.id === scheme.id)) return state
+        return { schemes: [...state.schemes, scheme] }
+      }),
+
+    apply: (scheme) => {
+      const override = scheme.override || {}
+      const updated = get().keys.map((k) => {
+        let name = 'base'
+        if (override[k.legend]) {
+          name = override[k.legend]
+        } else if (k.w > 1.5 || k.w2 > 1.5) {
+          name = 'mods'
+        }
+        const swatch = scheme.swatches[name] || scheme.swatches['base']
+        return {
+          ...k,
+          color: swatch ? swatch.background : k.color,
+          textColor: swatch ? swatch.color : k.textColor || '#222222'
+        }
+      })
+      const bg = scheme.swatches.accent?.background || scheme.swatches.base?.background || get().background
+      set({ keys: updated, scheme: scheme.id, background: bg })
+      syncAndWrite(updated)
+    },
+
+    store: () => {
+      const { active, keys, case: kase, shape, boards } = get()
+      if (!active) return
+      const updated = boards.map((b) => (b.id === active ? { ...b, keys, case: kase, shape } : b))
+      write(updated)
+      set({ boards: updated })
+    },
+
+    init: async () => {
+      const files = ['noel65', 'olivia60', 'port65', 'tofu64', 'kraze65']
+      let loadedFirstId: string | null = null
+
+      for (const file of files) {
+        try {
+          const res = await fetch(`/layouts/${file}.keykap`)
+          if (res.ok) {
+            const data: Saved = await res.json()
+            if (data && data.id && data.keys) {
+              const current = get().boards
+              const exists = current.some((b) => b.id === data.id || b.name.toLowerCase() === data.name.toLowerCase())
+              if (!exists) {
+                const updated = [...current, data]
+                write(updated)
+                set({ boards: updated })
+              }
+              if (!loadedFirstId) {
+                loadedFirstId = data.id
+              }
+            }
+          }
+        } catch { }
+      }
+
+      const currentBoards = get().boards
+      if (!get().active && currentBoards.length > 0) {
+        const targetId = loadedFirstId || currentBoards[0].id
+        get().open(targetId)
+      }
     }
   }
-}))
+})
 
 if (typeof window !== 'undefined') {
   useBoard.getState().init()

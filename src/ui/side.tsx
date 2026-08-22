@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type ChangeEvent, type DragEvent } from 'react'
+import { useState, useEffect, useRef, useCallback, type ChangeEvent, type DragEvent } from 'react'
 import { useBoard, type Scheme, type Saved } from '../store/board'
 import { parse } from '../parse/kle'
 import { dump } from '../parse/export'
@@ -57,7 +57,32 @@ export function Side() {
   const [json, setJson] = useState('')
   const [err, setErr] = useState(false)
   const [drag, setDrag] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
   const ref = useRef<HTMLInputElement>(null)
+
+  const lastSavedSnapshot = useRef<string>('')
+  const activeBoard = boards.find((b) => b.id === active)
+
+  useEffect(() => {
+    if (activeBoard) {
+      lastSavedSnapshot.current = JSON.stringify({
+        keys: activeBoard.keys,
+        case: activeBoard.case,
+        shape: activeBoard.shape
+      })
+      setIsDirty(false)
+    }
+  }, [active])
+
+  useEffect(() => {
+    if (!activeBoard) return
+    const currentSnapshot = JSON.stringify({
+      keys,
+      case: kase,
+      shape
+    })
+    setIsDirty(currentSnapshot !== lastSavedSnapshot.current)
+  }, [keys, kase, shape, activeBoard])
 
   useEffect(() => {
     if (item) {
@@ -67,7 +92,7 @@ export function Side() {
   }, [item])
 
   useEffect(() => {
-    const files = ['olivia', 'port', 'prussian']
+    const files = ['olivia', 'port', 'prussian', 'makima']
 
     files.forEach((file) => {
       fetch(`/colorways/${file}.json`)
@@ -102,18 +127,45 @@ export function Side() {
     setInputName('')
   }
 
+  function downloadJson(data: object | string, filename: string) {
+    const content = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
+    const blob = new Blob([content], { type: 'application/json;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = filename
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+    URL.revokeObjectURL(url)
+  }
+
+  function exportPalette(paletteScheme: Scheme) {
+    if (!paletteScheme) return
+    const filename = `${paletteScheme.id || 'colorway'}.json`
+    downloadJson(paletteScheme, filename)
+  }
+
   function proc(raw: string) {
     if (!raw.trim()) return
 
     try {
       const data = JSON.parse(raw)
-      if (data && Array.isArray(data.keys)) {
+
+      if (data && (Array.isArray(data.keys) || data.id)) {
         const saved: Saved = data
         const current = useBoard.getState().boards
         const exists = current.some((b) => b.id === saved.id)
-        const updated = exists ? current : [...current, saved]
+        const updated = exists
+          ? current.map((b) => (b.id === saved.id ? saved : b))
+          : [...current, saved]
+
         useBoard.setState({ boards: updated })
         open(saved.id)
+        if (saved.keys) load(saved.keys)
+      } else if (data && data.swatches) {
+        add(data)
+        apply(data)
       } else {
         const result = parse(data)
         load(result)
@@ -135,7 +187,35 @@ export function Side() {
     reader.readAsText(file)
   }
 
-  function exportFile(id: string) {
+  const saveLayout = useCallback((id: string) => {
+    const target = boards.find((b) => b.id === id)
+    if (!target) return
+
+    const updatedBoards = boards.map((b) => {
+      if (b.id === id) {
+        return {
+          ...b,
+          keys,
+          case: kase,
+          shape
+        }
+      }
+      return b
+    })
+
+    useBoard.setState({ boards: updatedBoards })
+
+    if (active === id) {
+      lastSavedSnapshot.current = JSON.stringify({
+        keys,
+        case: kase,
+        shape
+      })
+      setIsDirty(false)
+    }
+  }, [boards, active, keys, kase, shape])
+
+  const exportFile = useCallback((id: string) => {
     const target = boards.find((b) => b.id === id)
     if (!target) return
     const saved: Saved = {
@@ -146,15 +226,23 @@ export function Side() {
       shape: active === target.id ? shape : target.shape
     }
     const str = dump(saved)
+    const filename = `${target.name.toLowerCase().replace(/\s+/g, '-')}.keykap`
+    downloadJson(str, filename)
+  }, [boards, active, keys, kase, shape])
 
-    const uri = 'data:text/json;charset=utf-8,' + encodeURIComponent(str)
-    const anchor = document.createElement('a')
-    anchor.setAttribute('href', uri)
-    anchor.setAttribute('download', `${target.name.toLowerCase().replace(/\s+/g, '-')}.keycap`)
-    document.body.appendChild(anchor)
-    anchor.click()
-    anchor.remove()
-  }
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault()
+        if (active) {
+          saveLayout(active)
+        }
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [active, saveLayout])
 
   const currentScheme = schemes.find((s) => s.id === scheme)
 
@@ -162,11 +250,10 @@ export function Side() {
     transitionDelay: show ? `${60 + index * 45}ms` : '0ms'
   })
 
-  const blurItemClass = `transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-    show
+  const blurItemClass = `transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${show
       ? 'opacity-100 blur-0 translate-y-0 scale-100'
       : 'opacity-0 blur-xl -translate-y-2 scale-95 pointer-events-none'
-  }`
+    }`
 
   return (
     <>
@@ -196,21 +283,23 @@ export function Side() {
       `}</style>
 
       <div
-        className={`fixed left-5 top-5 z-50 font-sans bg-zinc-950 transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-          show
+        className={`fixed left-5 top-5 z-50 font-sans bg-zinc-950 transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] ${show
             ? 'h-[calc(100vh-40px)] w-[250px] rounded-2xl shadow-2xl'
             : 'h-9 w-9 rounded-xl shadow-lg hover:bg-zinc-900'
-        }`}
+          }`}
       >
         {!show ? (
           <button
             onClick={() => setShow(true)}
-            className="flex h-full w-full items-center justify-center text-zinc-300 hover:text-zinc-100 transition-colors duration-150"
+            className="flex h-full w-full items-center justify-center text-zinc-300 hover:text-zinc-100 transition-colors duration-150 relative"
           >
             <FiMenu className="h-3.5 w-3.5" />
+            {isDirty && (
+              <span className="absolute top-2 right-2 h-1 w-1 rounded-full bg-zinc-500" />
+            )}
           </button>
         ) : (
-          <div className="flex h-full w-full flex-col text-zinc-200 overflow-hidden">
+          <div className="flex h-full w-full flex-col text-zinc-200 overflow-hidden relative rounded-2xl">
             <div
               style={getBlurItemStyle(0)}
               className={`flex h-12 shrink-0 items-center justify-between px-3.5 pt-1 ${blurItemClass}`}
@@ -229,21 +318,20 @@ export function Side() {
               className={`px-3 py-1 ${blurItemClass}`}
             >
               <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-xl">
-                {[
+                {([
                   ['editor', 'Editor', FiSliders],
                   ['colorways', 'Colors', FiDroplet],
                   ['boards', 'Boards', FiLayers]
-                ].map(([id, label, Icon]: [string, string, any]) => {
+                ] as const).map(([id, label, Icon]) => {
                   const isActiveTab = tab === id
                   return (
                     <button
                       key={id}
                       onClick={() => setTab(id)}
-                      className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] font-medium transition-all duration-150 ${
-                        isActiveTab
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] font-medium transition-all duration-150 ${isActiveTab
                           ? 'bg-zinc-100 text-zinc-950 font-semibold'
                           : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                      }`}
+                        }`}
                     >
                       <Icon className="h-3 w-3" />
                       <span>{label}</span>
@@ -253,7 +341,7 @@ export function Side() {
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-4">
+            <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-4 pb-12">
               {tab === 'editor' && (
                 <div className="space-y-3">
                   {active && (
@@ -369,11 +457,10 @@ export function Side() {
                             <button
                               key={name}
                               onClick={() => brushSet({ name, swatch })}
-                              className={`flex h-7 w-full items-center justify-between px-2.5 text-[11px] rounded-lg transition ${
-                                activeBrush
+                              className={`flex h-7 w-full items-center justify-between px-2.5 text-[11px] rounded-lg transition ${activeBrush
                                   ? 'bg-zinc-100 text-zinc-950 font-semibold'
                                   : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'
-                              }`}
+                                }`}
                             >
                               <span className="capitalize">{name}</span>
                               <span className="flex items-center gap-1">
@@ -397,21 +484,38 @@ export function Side() {
                     style={getBlurItemStyle(2)}
                     className={`space-y-1 ${blurItemClass}`}
                   >
+                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
+                      Saved Colorways
+                    </label>
                     {schemes.map((s) => {
                       const activeItem = scheme === s.id
                       return (
-                        <button
+                        <div
                           key={s.id}
-                          onClick={() => apply(s)}
-                          className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-[11px] font-medium transition ${
-                            activeItem
+                          className={`flex items-center justify-between rounded-xl px-3 py-2 text-[11px] font-medium transition ${activeItem
                               ? 'bg-zinc-100 text-zinc-950 font-semibold'
                               : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
-                          }`}
+                            }`}
                         >
-                          <span>{s.label}</span>
-                          {activeItem && <span className="h-1.5 w-1.5 rounded-full bg-zinc-950" />}
-                        </button>
+                          <button
+                            onClick={() => apply(s)}
+                            className="flex-1 text-left flex items-center justify-between pr-2"
+                          >
+                            <span>{s.label}</span>
+                          </button>
+                          {activeItem && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                exportPalette(s)
+                              }}
+                              className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-800 hover:text-zinc-950 hover:bg-zinc-200 transition-colors"
+                              title="Export Scheme"
+                            >
+                              <FiDownload className="h-3.5 w-3.5" />
+                            </button>
+                          )}
+                        </div>
                       )
                     })}
                   </div>
@@ -485,9 +589,8 @@ export function Side() {
                         setDrag(true)
                       }}
                       onDragLeave={() => setDrag(false)}
-                      className={`flex items-center gap-1.5 rounded-xl bg-zinc-900 p-1.5 transition ${
-                        drag ? 'bg-zinc-800' : err ? 'bg-red-950' : ''
-                      }`}
+                      className={`flex items-center gap-1.5 rounded-xl bg-zinc-900 p-1.5 transition ${drag ? 'bg-zinc-800' : err ? 'bg-red-950' : ''
+                        }`}
                     >
                       <input
                         value={json}
@@ -516,12 +619,12 @@ export function Side() {
                       <input
                         ref={ref}
                         type="file"
-                        accept=".json,.keykap,application/json"
+                        accept=".keykap,.json"
                         onChange={(e: ChangeEvent<HTMLInputElement>) => read(e.target.files?.[0])}
                         className="hidden"
                       />
                     </div>
-                    {err && <div className="px-1 text-[9px] text-red-400">Invalid format</div>}
+                    {err && <div className="px-1 text-[9px] text-red-400">Invalid layout format</div>}
                   </div>
 
                   <div
@@ -542,9 +645,8 @@ export function Side() {
                           return (
                             <div
                               key={b.id}
-                              className={`flex items-center justify-between rounded-xl bg-zinc-900 p-2 transition ${
-                                activeItem ? 'bg-zinc-800' : 'hover:bg-zinc-850'
-                              }`}
+                              className={`flex items-center justify-between rounded-xl bg-zinc-900 p-2 transition ${activeItem ? 'bg-zinc-800' : 'hover:bg-zinc-850'
+                                }`}
                             >
                               <input
                                 type="text"
@@ -555,17 +657,17 @@ export function Side() {
                               <div className="flex items-center gap-1 shrink-0">
                                 <button
                                   onClick={() => open(b.id)}
-                                  className={`rounded-lg px-2.5 py-1 text-[9px] font-semibold transition ${
-                                    activeItem
+                                  className={`rounded-lg px-2.5 py-1 text-[9px] font-semibold transition ${activeItem
                                       ? 'bg-zinc-100 text-zinc-950'
                                       : 'bg-zinc-800 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-700'
-                                  }`}
+                                    }`}
                                 >
                                   {activeItem ? 'loaded' : 'load'}
                                 </button>
                                 <button
                                   onClick={() => exportFile(b.id)}
                                   className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition"
+                                  title="Export Layout"
                                 >
                                   <FiDownload className="h-3 w-3" />
                                 </button>
@@ -586,9 +688,23 @@ export function Side() {
               )}
             </div>
 
+            {isDirty && active && (
+              <div className="absolute bottom-10 left-0 right-0 py-1.5 flex justify-center transition-all duration-200">
+                <button
+                  onClick={() => saveLayout(active)}
+                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-[10px] text-zinc-300 hover:text-zinc-100 font-medium transition-all"
+                >
+                  <span>unsaved changes</span>
+                  <kbd className="inline-flex items-center gap-0.5 text-[9px] font-sans text-zinc-400">
+                    <span>⌘</span>S
+                  </kbd>
+                </button>
+              </div>
+            )}
+
             <div
               style={getBlurItemStyle(8)}
-              className={`flex h-10 shrink-0 items-center justify-center px-3 ${blurItemClass}`}
+              className={`flex h-10 shrink-0 items-center justify-center px-3.5 bg-zinc-950 border-t border-zinc-900/60 rounded-b-2xl ${blurItemClass}`}
             >
               <span className="text-[10px] text-zinc-600 font-medium tracking-wide">made with ♡ by ary</span>
             </div>

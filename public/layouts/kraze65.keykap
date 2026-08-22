@@ -1,6 +1,6 @@
 {
-  "id": "o690ia7",
-  "name": "Noel - 65%",
+  "id": "o697ia7",
+  "name": "Kraze - 65%",
   "keys": [
     {
       "id": "0",
@@ -15,10 +15,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E5A8B3",
+      "color": "#000000",
       "legend": "Esc",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "1",
@@ -33,10 +33,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "1",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "2",
@@ -51,10 +51,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "2",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "3",
@@ -69,10 +69,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "3",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "4",
@@ -87,10 +87,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "4",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "5",
@@ -105,10 +105,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "5",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "6",
@@ -123,10 +123,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "6",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "7",
@@ -141,10 +141,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "7",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "8",
@@ -159,10 +159,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "8",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "9",
@@ -177,10 +177,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "9",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "10",
@@ -195,10 +195,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "0",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "11",
@@ -213,10 +213,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "-",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "12",
@@ -231,10 +231,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "=",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "13",
@@ -249,10 +249,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Backspace",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "14",
@@ -267,10 +267,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Del",
       "row": 1,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "15",
@@ -285,10 +285,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Tab",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "16",
@@ -303,10 +303,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "Q",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "17",
@@ -321,10 +321,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "W",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "18",
@@ -339,10 +339,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "E",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "19",
@@ -357,10 +357,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "R",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "20",
@@ -375,10 +375,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "T",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "21",
@@ -393,10 +393,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "Y",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "22",
@@ -411,10 +411,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "U",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "23",
@@ -429,10 +429,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "I",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "24",
@@ -447,10 +447,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "O",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "25",
@@ -465,10 +465,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "P",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "26",
@@ -483,10 +483,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "[",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "27",
@@ -501,10 +501,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "]",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "28",
@@ -519,10 +519,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#f7f7f7",
       "legend": "\\",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "29",
@@ -537,10 +537,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "PgUp",
       "row": 2,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "30",
@@ -555,10 +555,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Caps",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "31",
@@ -573,10 +573,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "A",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "32",
@@ -591,10 +591,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "S",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "33",
@@ -609,10 +609,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "D",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "34",
@@ -627,10 +627,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "F",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "35",
@@ -645,10 +645,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "G",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "36",
@@ -663,10 +663,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "H",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "37",
@@ -681,10 +681,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "J",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "38",
@@ -699,10 +699,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "K",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "39",
@@ -717,10 +717,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "L",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "40",
@@ -735,10 +735,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": ";",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "41",
@@ -753,10 +753,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "'",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "42",
@@ -771,10 +771,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E5A8B3",
+      "color": "#000000",
       "legend": "Enter",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "43",
@@ -789,10 +789,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "PgDn",
       "row": 3,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "44",
@@ -807,10 +807,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Shift",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "45",
@@ -825,10 +825,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "Z",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "46",
@@ -843,10 +843,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "X",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "47",
@@ -861,10 +861,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "C",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "48",
@@ -879,10 +879,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "V",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "49",
@@ -897,10 +897,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "B",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "50",
@@ -915,10 +915,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "N",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "51",
@@ -933,10 +933,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "M",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "52",
@@ -951,10 +951,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": ",",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "53",
@@ -969,10 +969,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": ".",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "54",
@@ -987,10 +987,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "/",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "55",
@@ -1005,10 +1005,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Shift",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "56",
@@ -1023,10 +1023,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "↑",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "57",
@@ -1041,10 +1041,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "End",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "58",
@@ -1059,10 +1059,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Ctrl",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "59",
@@ -1077,10 +1077,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Win",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "60",
@@ -1095,10 +1095,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Alt",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "61",
@@ -1113,10 +1113,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#E9E8E6",
+      "color": "#f7f7f7",
       "legend": "",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "62",
@@ -1131,10 +1131,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Alt",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "63",
@@ -1149,10 +1149,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "Ctrl",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "64",
@@ -1167,10 +1167,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
-      "legend": "Left",
+      "color": "#000000",
+      "legend": "←",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "65",
@@ -1185,10 +1185,10 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "↓",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     },
     {
       "id": "66",
@@ -1203,13 +1203,13 @@
       "rx": 0,
       "ry": 0,
       "r": 0,
-      "color": "#A9DCD8",
+      "color": "#000000",
       "legend": "→",
       "row": 4,
-      "textColor": "#222222"
+      "textColor": "#e80400"
     }
   ],
-  "case": "#b4d6d6",
+  "case": "#930907",
   "shape": {
     "pad": 0.3,
     "inset": 0,

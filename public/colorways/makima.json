@@ -1,0 +1,20 @@
+{
+  "id": "makima",
+  "label": "Makima",
+  "manufacturer": "KKB",
+  "swatches": {
+    "base": {
+      "background": "#f7f7f7",
+      "color": "#e80400"
+    },
+    "mods": {
+      "background": "#000000",
+      "color": "#e80400"
+    },
+    "accent": {
+      "background": "#d90400",
+      "color": "#000000"
+    }
+  },
+  "override": {}
+}

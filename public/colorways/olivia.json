@@ -1,6 +1,7 @@
 {
   "id": "olivia",
   "label": "Olivia",
+  "manufacturer": "GMK",
   "swatches": {
     "base": {
       "background": "#e1dbd1",
