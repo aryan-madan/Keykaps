@@ -53,7 +53,20 @@ export function Key({ data, mid }: Props) {
       if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName)) return
       const text = data.legend?.toLowerCase() || ''
       const code = e.key.toLowerCase()
+
+      let matches = false
       if (text === code || (code === ' ' && text === '')) {
+        matches = true
+      } else if (
+        (code === 'arrowleft' && (text === '←' || text === 'left' || text === 'arrowleft')) ||
+        (code === 'arrowright' && (text === '→' || text === 'right' || text === 'arrowright')) ||
+        (code === 'arrowup' && (text === '↑' || text === 'up' || text === 'arrowup')) ||
+        (code === 'arrowdown' && (text === '↓' || text === 'down' || text === 'arrowdown'))
+      ) {
+        matches = true
+      }
+
+      if (matches) {
         setDown(state)
       }
     }
@@ -79,12 +92,16 @@ export function Key({ data, mid }: Props) {
       else if (legend === 'shift') filename = 'shift.wav'
       else if (legend === 'tab') filename = 'tab.wav'
       else if (legend === 'caps lock') filename = 'caps lock.wav'
+      else if (['←', 'left', 'arrowleft'].includes(legend)) filename = 'left.wav'
+      else if (['→', 'right', 'arrowright'].includes(legend)) filename = 'right.wav'
+      else if (['↑', 'up', 'arrowup'].includes(legend)) filename = 'up.wav'
+      else if (['↓', 'down', 'arrowdown'].includes(legend)) filename = 'down.wav'
       else if (legend.length === 1 || legend === '[' || legend === ']') filename = `${legend}.wav`
 
       const playAudio = (path: string, isFallback = false) => {
         const audio = new Audio(path)
         audio.volume = 1.0
-        
+
         audio.play().catch(() => {
           if (!isFallback && path !== '/sounds/caps lock.wav') {
             playAudio('/sounds/caps lock.wav', true)

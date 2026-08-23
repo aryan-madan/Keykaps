@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, type ChangeEvent, type DragEv
 import { useBoard, type Scheme, type Saved } from '../store/board'
 import { parse } from '../parse/kle'
 import { dump } from '../parse/export'
+import { Layout } from './layout'
 import {
   FiMenu,
   FiX,
@@ -11,12 +12,17 @@ import {
   FiDownload,
   FiSliders,
   FiDroplet,
-  FiLayers
+  FiLayers,
+  FiMaximize2
 } from 'react-icons/fi'
 
 export function Side() {
   const [show, setShow] = useState(true)
+  const [vis, setVis] = useState(true)
   const [tab, setTab] = useState('editor')
+  const [full, setFull] = useState(false)
+  const [editor, setEditor] = useState(false)
+  const [edvis, setEdvis] = useState(false)
 
   const {
     mode,
@@ -43,13 +49,13 @@ export function Side() {
     case: kase
   } = useBoard()
 
-  const [inputName, setInputName] = useState('')
-  const [baseBg, setBaseBg] = useState('#18181b')
-  const [baseFg, setBaseFg] = useState('#f4f4f5')
-  const [modsBg, setModsBg] = useState('#09090b')
-  const [modsFg, setModsFg] = useState('#f4f4f5')
-  const [accentBg, setAccentBg] = useState('#3f3f46')
-  const [accentFg, setAccentFg] = useState('#ffffff')
+  const [pname, setPname] = useState('')
+  const [basebg, setBasebg] = useState('#18181b')
+  const [basefg, setBasefg] = useState('#f4f4f5')
+  const [modsbg, setModsbg] = useState('#09090b')
+  const [modsfg, setModsfg] = useState('#f4f4f5')
+  const [accbg, setAccbg] = useState('#3f3f46')
+  const [accfg, setAccfg] = useState('#ffffff')
 
   const item = keys.find((k) => k.id === selected)
   const [text, setText] = useState('')
@@ -57,33 +63,44 @@ export function Side() {
   const [json, setJson] = useState('')
   const [err, setErr] = useState(false)
   const [drag, setDrag] = useState(false)
-  const [isDirty, setIsDirty] = useState(false)
-  const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
-  
+  const [dirty, setDirty] = useState(false)
+  const [editid, setEditid] = useState<string | null>(null)
+
   const ref = useRef<HTMLInputElement>(null)
-  const lastSavedSnapshot = useRef<string>('')
-  const activeBoard = boards.find((b) => b.id === active)
+  const snap = useRef<string>('')
+  const curboard = boards.find((b) => b.id === active)
 
   useEffect(() => {
-    if (activeBoard) {
-      lastSavedSnapshot.current = JSON.stringify({
-        keys: activeBoard.keys,
-        case: activeBoard.case,
-        shape: activeBoard.shape
+    if (show) {
+      const timer = setTimeout(() => {
+        setVis(true)
+      }, 250)
+      return () => clearTimeout(timer)
+    } else {
+      setVis(false)
+    }
+  }, [show])
+
+  useEffect(() => {
+    if (curboard) {
+      snap.current = JSON.stringify({
+        keys: curboard.keys,
+        case: curboard.case,
+        shape: curboard.shape
       })
-      setIsDirty(false)
+      setDirty(false)
     }
   }, [active])
 
   useEffect(() => {
-    if (!activeBoard) return
-    const currentSnapshot = JSON.stringify({
+    if (!curboard) return
+    const cur = JSON.stringify({
       keys,
       case: kase,
       shape
     })
-    setIsDirty(currentSnapshot !== lastSavedSnapshot.current)
-  }, [keys, kase, shape, activeBoard])
+    setDirty(cur !== snap.current)
+  }, [keys, kase, shape, curboard])
 
   useEffect(() => {
     if (item) {
@@ -102,41 +119,41 @@ export function Side() {
           .catch(() => null)
       )
     ).then((results) => {
-      const loadedSchemes: Scheme[] = []
+      const loaded: Scheme[] = []
       results.forEach((data) => {
         if (data?.id) {
           add(data)
-          loadedSchemes.push(data)
+          loaded.push(data)
         }
       })
       const state = useBoard.getState()
-      if (!state.scheme && loadedSchemes.length > 0) {
-        apply(loadedSchemes[0])
+      if (!state.scheme && loaded.length > 0) {
+        apply(loaded[0])
       }
     })
   }, [add, apply])
 
   function create() {
-    if (!inputName.trim()) return
+    if (!pname.trim()) return
 
     const scheme: Scheme = {
-      id: inputName.toLowerCase().replace(/\s+/g, '-'),
-      label: inputName,
+      id: pname.toLowerCase().replace(/\s+/g, '-'),
+      label: pname,
       manufacturer: 'custom',
       swatches: {
-        base: { background: baseBg, color: baseFg },
-        mods: { background: modsBg, color: modsFg },
-        accent: { background: accentBg, color: accentFg }
+        base: { background: basebg, color: basefg },
+        mods: { background: modsbg, color: modsfg },
+        accent: { background: accbg, color: accfg }
       },
       override: {}
     }
 
     add(scheme)
     apply(scheme)
-    setInputName('')
+    setPname('')
   }
 
-  function downloadJson(data: object | string, filename: string) {
+  function download(data: object | string, filename: string) {
     const content = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
     const blob = new Blob([content], { type: 'application/json;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
@@ -149,10 +166,9 @@ export function Side() {
     URL.revokeObjectURL(url)
   }
 
-  function exportPalette(paletteScheme: Scheme) {
-    if (!paletteScheme) return
-    const filename = `${paletteScheme.id || 'colorway'}.json`
-    downloadJson(paletteScheme, filename)
+  function expsch(s: Scheme) {
+    if (!s) return
+    download(s, `${s.id || 'colorway'}.json`)
   }
 
   function proc(raw: string) {
@@ -163,11 +179,11 @@ export function Side() {
 
       if (data && (Array.isArray(data.keys) || data.id)) {
         const saved: Saved = data
-        const current = useBoard.getState().boards
-        const exists = current.some((b) => b.id === saved.id)
+        const cur = useBoard.getState().boards
+        const exists = cur.some((b) => b.id === saved.id)
         const updated = exists
-          ? current.map((b) => (b.id === saved.id ? saved : b))
-          : [...current, saved]
+          ? cur.map((b) => (b.id === saved.id ? saved : b))
+          : [...cur, saved]
 
         useBoard.setState({ boards: updated })
         open(saved.id)
@@ -196,11 +212,11 @@ export function Side() {
     reader.readAsText(file)
   }
 
-  const saveLayout = useCallback((id: string) => {
+  const save = useCallback((id: string) => {
     const target = boards.find((b) => b.id === id)
     if (!target) return
 
-    const updatedBoards = boards.map((b) => {
+    const updated = boards.map((b) => {
       if (b.id === id) {
         return {
           ...b,
@@ -212,19 +228,19 @@ export function Side() {
       return b
     })
 
-    useBoard.setState({ boards: updatedBoards })
+    useBoard.setState({ boards: updated })
 
     if (active === id) {
-      lastSavedSnapshot.current = JSON.stringify({
+      snap.current = JSON.stringify({
         keys,
         case: kase,
         shape
       })
-      setIsDirty(false)
+      setDirty(false)
     }
   }, [boards, active, keys, kase, shape])
 
-  const exportFile = useCallback((id: string) => {
+  const expfile = useCallback((id: string) => {
     const target = boards.find((b) => b.id === id)
     if (!target) return
     const saved: Saved = {
@@ -235,35 +251,44 @@ export function Side() {
       shape: active === target.id ? shape : target.shape
     }
     const str = dump(saved)
-    const filename = `${target.name.toLowerCase().replace(/\s+/g, '-')}.keykap`
-    downloadJson(str, filename)
+    download(str, `${target.name.toLowerCase().replace(/\s+/g, '-')}.keykap`)
   }, [boards, active, keys, kase, shape])
 
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const keydown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault()
         if (active) {
-          saveLayout(active)
+          save(active)
         }
       }
     }
 
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [active, saveLayout])
+    window.addEventListener('keydown', keydown)
+    return () => window.removeEventListener('keydown', keydown)
+  }, [active, save])
 
-  const currentScheme = schemes.find((s) => s.id === scheme)
+  function openeditor() {
+    setVis(false)
+    setTimeout(() => {
+      setFull(true)
+      setTimeout(() => {
+        setEditor(true)
+        requestAnimationFrame(() => setEdvis(true))
+      }, 400)
+    }, 300)
+  }
 
-  const getBlurItemStyle = (index: number) => ({
-    transitionDelay: show ? `${60 + index * 45}ms` : '0ms'
-  })
+  function closeeditor() {
+    setEdvis(false)
+    setTimeout(() => {
+      setEditor(false)
+      setFull(false)
+      setVis(true)
+    }, 300)
+  }
 
-  const blurItemClass = `transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-    show
-      ? 'opacity-100 blur-0 translate-y-0 scale-100'
-      : 'opacity-0 blur-xl -translate-y-2 scale-95 pointer-events-none'
-  }`
+  const curscheme = schemes.find((s) => s.id === scheme)
 
   return (
     <>
@@ -292,61 +317,59 @@ export function Side() {
         }
       `}</style>
 
+      {editor && <Layout vis={edvis} exit={closeeditor} />}
+
       <div
         style={{
-          width: show ? '250px' : '40px',
-          height: show ? 'calc(100vh - 40px)' : '40px'
+          width: full ? 'calc(100vw - 40px)' : show ? '250px' : '40px',
+          height: full ? 'calc(100vh - 40px)' : show ? 'calc(100vh - 40px)' : '40px'
         }}
-        className="fixed left-5 top-5 z-50 font-sans bg-zinc-950 transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-2xl shadow-2xl overflow-hidden"
+        className="fixed left-5 top-5 z-40 font-sans bg-zinc-950 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-2xl shadow-2xl overflow-hidden border border-zinc-800/80"
       >
-        {!show ? (
+        {!show && !full ? (
           <button
             onClick={() => setShow(true)}
             className="flex h-full w-full items-center justify-center transition-colors duration-150 relative group"
             title="open menu"
           >
             <FiMenu className="h-4 w-4 text-zinc-300 transition-transform duration-300 group-hover:scale-105" />
-            {isDirty && (
+            {dirty && (
               <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-zinc-400" />
             )}
           </button>
         ) : (
-          <div className="flex h-full w-full flex-col text-zinc-200 overflow-hidden relative rounded-2xl">
-            <div
-              style={getBlurItemStyle(0)}
-              className={`flex h-12 shrink-0 items-center justify-between px-3.5 pt-1 ${blurItemClass}`}
-            >
+          <div className={`flex h-full w-full flex-col text-zinc-200 overflow-hidden relative rounded-2xl transition-opacity duration-300 ease-out ${vis && !full ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}>
+            <div className="flex h-12 shrink-0 items-center justify-between px-3.5 pt-1">
               <div className="flex items-center gap-2">
                 <span className="font-cherry text-xl tracking-wide text-zinc-100">keykaps</span>
               </div>
               <button
-                onClick={() => setShow(false)}
+                onClick={() => {
+                  setVis(false)
+                  setShow(false)
+                }}
                 className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
               >
                 <FiX className="h-3.5 w-3.5" />
               </button>
             </div>
 
-            <div
-              style={getBlurItemStyle(1)}
-              className={`px-3 py-1 ${blurItemClass}`}
-            >
+            <div className="px-3 py-1">
               <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-xl">
                 {([
                   ['editor', 'editor', FiSliders],
                   ['colorways', 'colors', FiDroplet],
                   ['boards', 'boards', FiLayers]
                 ] as const).map(([id, label, Icon]) => {
-                  const isActiveTab = tab === id
+                  const act = tab === id
                   return (
                     <button
                       key={id}
                       onClick={() => setTab(id)}
-                      className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] font-medium transition-all duration-150 ${
-                        isActiveTab
-                          ? 'bg-zinc-100 text-zinc-950 font-semibold'
-                          : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                      }`}
+                      className={`flex items-center justify-center gap-1 rounded-lg py-1.5 text-[9px] font-medium transition-all duration-150 ${act
+                        ? 'bg-zinc-100 text-zinc-950 font-semibold'
+                        : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                        }`}
                     >
                       <Icon className="h-3 w-3" />
                       <span>{label}</span>
@@ -359,11 +382,21 @@ export function Side() {
             <div className="flex-1 overflow-y-auto no-scrollbar px-3 py-2 space-y-4 pb-12">
               {tab === 'editor' && (
                 <div className="space-y-3">
-                  {active && (
-                    <div
-                      style={getBlurItemStyle(2)}
-                      className={`space-y-1 ${blurItemClass}`}
+                  <div className="space-y-1">
+                    <label className="text-[9px] font-medium text-zinc-500 px-1">
+                      layout editor
+                    </label>
+                    <button
+                      onClick={openeditor}
+                      className="w-full flex items-center justify-center gap-2 rounded-xl bg-zinc-900 hover:bg-zinc-800 py-2.5 text-[11px] font-semibold text-zinc-200 transition active:scale-[0.98]"
                     >
+                      <FiMaximize2 className="h-3.5 w-3.5" />
+                      <span>expand editor</span>
+                    </button>
+                  </div>
+
+                  {active && (
+                    <div className="space-y-1">
                       <label className="text-[9px] font-medium text-zinc-500 px-1">
                         layout name
                       </label>
@@ -377,10 +410,7 @@ export function Side() {
                     </div>
                   )}
 
-                  <div
-                    style={getBlurItemStyle(3)}
-                    className={`space-y-1 ${blurItemClass}`}
-                  >
+                  <div className="space-y-1">
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       mode
                     </label>
@@ -393,10 +423,7 @@ export function Side() {
                     </button>
                   </div>
 
-                  <div
-                    style={getBlurItemStyle(4)}
-                    className={`space-y-1 ${blurItemClass}`}
-                  >
+                  <div className="space-y-1">
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       background
                     </label>
@@ -409,10 +436,7 @@ export function Side() {
                     </button>
                   </div>
 
-                  <div
-                    style={getBlurItemStyle(5)}
-                    className={`space-y-1 ${blurItemClass}`}
-                  >
+                  <div className="space-y-1">
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       key legend
                     </label>
@@ -434,10 +458,7 @@ export function Side() {
                     )}
                   </div>
 
-                  <div
-                    style={getBlurItemStyle(6)}
-                    className={`space-y-1 ${blurItemClass}`}
-                  >
+                  <div className="space-y-1">
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       case color
                     </label>
@@ -457,26 +478,22 @@ export function Side() {
                     </div>
                   </div>
 
-                  <div
-                    style={getBlurItemStyle(7)}
-                    className={`space-y-1 ${blurItemClass}`}
-                  >
+                  <div className="space-y-1">
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       active brush
                     </label>
-                    {currentScheme ? (
+                    {curscheme ? (
                       <div className="bg-zinc-900 rounded-xl p-1 space-y-0.5">
-                        {Object.entries(currentScheme.swatches).map(([name, swatch]) => {
-                          const activeBrush = brush.name === name
+                        {Object.entries(curscheme.swatches).map(([name, swatch]) => {
+                          const act = brush.name === name
                           return (
                             <button
                               key={name}
                               onClick={() => brushSet({ name, swatch })}
-                              className={`flex h-7 w-full items-center justify-between px-2.5 text-[11px] rounded-lg transition ${
-                                activeBrush
-                                  ? 'bg-zinc-100 text-zinc-950 font-semibold'
-                                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'
-                              }`}
+                              className={`flex h-7 w-full items-center justify-between px-2.5 text-[11px] rounded-lg transition ${act
+                                ? 'bg-zinc-100 text-zinc-950 font-semibold'
+                                : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'
+                                }`}
                             >
                               <span className="lowercase">{name}</span>
                               <span className="flex items-center gap-1">
@@ -496,36 +513,31 @@ export function Side() {
 
               {tab === 'colorways' && (
                 <div className="space-y-3">
-                  <div
-                    style={getBlurItemStyle(2)}
-                    className={`space-y-1 ${blurItemClass}`}
-                  >
+                  <div className="space-y-1">
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       saved colorways
                     </label>
                     <div className="space-y-1">
                       {schemes.map((s) => {
-                        const activeItem = scheme === s.id
+                        const act = scheme === s.id
                         return (
                           <div
                             key={s.id}
                             onClick={() => apply(s)}
-                            className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
-                              activeItem
-                                ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
-                                : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
-                            }`}
+                            className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-300 ease-out cursor-pointer ${act
+                              ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
+                              : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
+                              }`}
                           >
-                            <span className={`min-w-0 flex-1 truncate px-1 text-[11px] ${
-                              activeItem ? 'text-zinc-950 font-semibold' : 'text-zinc-100 font-medium'
-                            }`}>
+                            <span className={`min-w-0 flex-1 truncate px-1 text-[11px] ${act ? 'text-zinc-950 font-semibold' : 'text-zinc-100 font-medium'
+                              }`}>
                               {s.label}
                             </span>
 
-                            {activeItem && (
+                            {act && (
                               <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                                 <button
-                                  onClick={() => exportPalette(s)}
+                                  onClick={() => expsch(s)}
                                   className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-800 hover:text-zinc-950 hover:bg-zinc-200 transition"
                                   title="export scheme"
                                 >
@@ -539,25 +551,22 @@ export function Side() {
                     </div>
                   </div>
 
-                  <div
-                    style={getBlurItemStyle(3)}
-                    className={`space-y-2 pt-2 ${blurItemClass}`}
-                  >
+                  <div className="space-y-2 pt-2">
                     <span className="text-[9px] font-medium text-zinc-500 px-1">
                       custom palette
                     </span>
                     <input
                       type="text"
-                      value={inputName}
-                      onChange={(e) => setInputName(e.target.value)}
+                      value={pname}
+                      onChange={(e) => setPname(e.target.value)}
                       placeholder="palette name"
                       className="h-8 w-full bg-zinc-900 text-zinc-100 rounded-xl px-3 text-[11px] outline-none placeholder:text-zinc-600 focus:bg-zinc-800 transition"
                     />
                     <div className="bg-zinc-900 rounded-xl p-1 space-y-0.5">
                       {[
-                        ['base', baseBg, baseFg, setBaseBg, setBaseFg],
-                        ['mods', modsBg, modsFg, setModsBg, setModsFg],
-                        ['accent', accentBg, accentFg, setAccentBg, setAccentFg]
+                        ['base', basebg, basefg, setBasebg, setBasefg],
+                        ['mods', modsbg, modsfg, setModsbg, setModsfg],
+                        ['accent', accbg, accfg, setAccbg, setAccfg]
                       ].map(([label, bg, fg, setBg, setFg]) => (
                         <div key={label as string} className="flex h-7 items-center justify-between px-2.5 rounded-lg hover:bg-zinc-800">
                           <span className="text-[11px] text-zinc-300 lowercase">{label as string}</span>
@@ -590,10 +599,7 @@ export function Side() {
 
               {tab === 'boards' && (
                 <div className="space-y-3">
-                  <div
-                    style={getBlurItemStyle(2)}
-                    className={`space-y-1 ${blurItemClass}`}
-                  >
+                  <div className="space-y-1">
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       import
                     </label>
@@ -608,9 +614,8 @@ export function Side() {
                         setDrag(true)
                       }}
                       onDragLeave={() => setDrag(false)}
-                      className={`flex items-center gap-1.5 rounded-xl bg-zinc-900 p-1.5 transition ${
-                        drag ? 'bg-zinc-800' : err ? 'bg-red-950' : ''
-                      }`}
+                      className={`flex items-center gap-1.5 rounded-xl bg-zinc-900 p-1.5 transition ${drag ? 'bg-zinc-800' : err ? 'bg-red-950' : ''
+                        }`}
                     >
                       <input
                         value={json}
@@ -647,10 +652,7 @@ export function Side() {
                     {err && <div className="px-1 text-[9px] text-red-400">invalid layout format</div>}
                   </div>
 
-                  <div
-                    style={getBlurItemStyle(3)}
-                    className={`space-y-1 ${blurItemClass}`}
-                  >
+                  <div className="space-y-1">
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       layouts list
                     </label>
@@ -661,47 +663,44 @@ export function Side() {
                         </div>
                       ) : (
                         boards.map((b) => {
-                          const activeItem = active === b.id
-                          const isEditing = editingBoardId === b.id
+                          const act = active === b.id
+                          const editing = editid === b.id
                           return (
                             <div
                               key={b.id}
                               onClick={() => {
-                                if (!activeItem) open(b.id)
+                                if (!act) open(b.id)
                               }}
-                              onDoubleClick={() => setEditingBoardId(b.id)}
-                              className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
-                                activeItem
-                                  ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
-                                  : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
-                              }`}
+                              onDoubleClick={() => setEditid(b.id)}
+                              className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-300 ease-out cursor-pointer ${act
+                                ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
+                                : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
+                                }`}
                             >
-                              {isEditing ? (
+                              {editing ? (
                                 <input
                                   type="text"
                                   autoFocus
                                   value={b.name}
                                   onChange={(e) => rename(b.id, e.target.value)}
-                                  onBlur={() => setEditingBoardId(null)}
+                                  onBlur={() => setEditid(null)}
                                   onKeyDown={(e) => {
-                                    if (e.key === 'Enter') setEditingBoardId(null)
+                                    if (e.key === 'Enter') setEditid(null)
                                   }}
-                                  className={`min-w-0 flex-1 bg-transparent px-1 text-[11px] outline-none ${
-                                    activeItem ? 'text-zinc-950 font-semibold' : 'text-zinc-100 font-medium'
-                                  }`}
+                                  className={`min-w-0 flex-1 bg-transparent px-1 text-[11px] outline-none ${act ? 'text-zinc-950 font-semibold' : 'text-zinc-100 font-medium'
+                                    }`}
                                 />
                               ) : (
-                                <span className={`min-w-0 flex-1 truncate px-1 text-[11px] ${
-                                  activeItem ? 'text-zinc-950 font-semibold' : 'text-zinc-100 font-medium'
-                                }`}>
+                                <span className={`min-w-0 flex-1 truncate px-1 text-[11px] ${act ? 'text-zinc-950 font-semibold' : 'text-zinc-100 font-medium'
+                                  }`}>
                                   {b.name}
                                 </span>
                               )}
 
-                              {activeItem && (
+                              {act && (
                                 <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                                   <button
-                                    onClick={() => exportFile(b.id)}
+                                    onClick={() => expfile(b.id)}
                                     className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-800 hover:text-zinc-950 hover:bg-zinc-200 transition"
                                     title="export layout"
                                   >
@@ -726,10 +725,10 @@ export function Side() {
               )}
             </div>
 
-            {isDirty && active && (
+            {dirty && active && (
               <div className="absolute bottom-10 left-0 right-0 py-1.5 flex justify-center transition-all duration-200">
                 <button
-                  onClick={() => saveLayout(active)}
+                  onClick={() => save(active)}
                   className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-[10px] text-zinc-300 hover:text-zinc-100 font-medium transition-all"
                 >
                   <span>unsaved changes</span>
@@ -740,10 +739,7 @@ export function Side() {
               </div>
             )}
 
-            <div
-              style={getBlurItemStyle(8)}
-              className={`flex h-10 shrink-0 items-center justify-center px-3.5 bg-zinc-950 border-t border-zinc-900/60 rounded-b-2xl ${blurItemClass}`}
-            >
+            <div className="flex h-10 shrink-0 items-center justify-center px-3.5 bg-zinc-950 border-t border-zinc-900/60 rounded-b-2xl">
               <span className="text-[10px] text-zinc-600 font-medium tracking-wide">made with ♡ by ary</span>
             </div>
           </div>
