@@ -43,6 +43,8 @@ export function Side() {
     selected,
     legend,
     load,
+    commit,
+    dirty,
     env,
     envSet,
     shape,
@@ -63,12 +65,9 @@ export function Side() {
   const [json, setJson] = useState('')
   const [err, setErr] = useState(false)
   const [drag, setDrag] = useState(false)
-  const [dirty, setDirty] = useState(false)
   const [editid, setEditid] = useState<string | null>(null)
 
   const ref = useRef<HTMLInputElement>(null)
-  const snap = useRef<string>('')
-  const curboard = boards.find((b) => b.id === active)
 
   useEffect(() => {
     if (show) {
@@ -80,27 +79,6 @@ export function Side() {
       setVis(false)
     }
   }, [show])
-
-  useEffect(() => {
-    if (curboard) {
-      snap.current = JSON.stringify({
-        keys: curboard.keys,
-        case: curboard.case,
-        shape: curboard.shape
-      })
-      setDirty(false)
-    }
-  }, [active])
-
-  useEffect(() => {
-    if (!curboard) return
-    const cur = JSON.stringify({
-      keys,
-      case: kase,
-      shape
-    })
-    setDirty(cur !== snap.current)
-  }, [keys, kase, shape, curboard])
 
   useEffect(() => {
     if (item) {
@@ -212,33 +190,10 @@ export function Side() {
     reader.readAsText(file)
   }
 
-  const save = useCallback((id: string) => {
-    const target = boards.find((b) => b.id === id)
-    if (!target) return
-
-    const updated = boards.map((b) => {
-      if (b.id === id) {
-        return {
-          ...b,
-          keys,
-          case: kase,
-          shape
-        }
-      }
-      return b
-    })
-
-    useBoard.setState({ boards: updated })
-
-    if (active === id) {
-      snap.current = JSON.stringify({
-        keys,
-        case: kase,
-        shape
-      })
-      setDirty(false)
-    }
-  }, [boards, active, keys, kase, shape])
+  const handleSave = useCallback(() => {
+    if (!active) return
+    commit(keys)
+  }, [active, keys, commit])
 
   const expfile = useCallback((id: string) => {
     const target = boards.find((b) => b.id === id)
@@ -258,15 +213,15 @@ export function Side() {
     const keydown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
         e.preventDefault()
-        if (active) {
-          save(active)
+        if (active && dirty) {
+          commit(keys)
         }
       }
     }
 
     window.addEventListener('keydown', keydown)
     return () => window.removeEventListener('keydown', keydown)
-  }, [active, save])
+  }, [active, dirty, keys, commit])
 
   function openeditor() {
     setVis(false)
@@ -467,12 +422,12 @@ export function Side() {
                       <div className="flex items-center gap-2">
                         <input
                           type="color"
-                          value={useBoard.getState().case}
+                          value={kase}
                           onChange={(e) => shell(e.target.value)}
                           className="h-4 w-4 cursor-pointer appearance-none rounded-md bg-transparent border-0 p-0"
                         />
                         <span className="font-mono text-[11px] text-zinc-200">
-                          {useBoard.getState().case}
+                          {kase}
                         </span>
                       </div>
                     </div>
@@ -727,7 +682,7 @@ export function Side() {
 
             <div className={`absolute bottom-10 left-0 right-0 py-1.5 flex justify-center transition-all duration-200 pointer-events-none ${dirty && active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
               <button
-                onClick={() => active && save(active)}
+                onClick={handleSave}
                 className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-[10px] text-zinc-300 hover:text-zinc-100 font-medium transition-all shadow-lg"
               >
                 <span>unsaved changes</span>

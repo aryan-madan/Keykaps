@@ -60,7 +60,9 @@ export type State = {
   scheme: string | null
   background: string
   env: boolean
+  dirty: boolean
   load: (keys: Key[]) => void
+  commit: (keys: Key[]) => void
   paint: (id: string, color: string, textColor: string) => void
   select: (id: string | null) => void
   legend: (id: string, text: string) => void
@@ -97,22 +99,6 @@ function write(boards: Saved[]) {
 }
 
 export const useBoard = create<State>((set, get) => {
-  const syncAndWrite = (updatedKeys?: Key[], updatedCase?: string, updatedShape?: Shape) => {
-    const { active, boards, keys, case: currentCase, shape: currentShape } = get()
-    if (!active) return
-
-    const finalKeys = updatedKeys ?? keys
-    const finalCase = updatedCase ?? currentCase
-    const finalShape = updatedShape ?? currentShape
-
-    const updatedBoards = boards.map((b) =>
-      b.id === active ? { ...b, keys: finalKeys, case: finalCase, shape: finalShape } : b
-    )
-
-    write(updatedBoards)
-    set({ boards: updatedBoards })
-  }
-
   return {
     keys: [],
     case: '#e6e6e6',
@@ -126,6 +112,7 @@ export const useBoard = create<State>((set, get) => {
     scheme: null,
     background: '#09090b',
     env: false,
+    dirty: false,
 
     load: (keys) => {
       const id = Math.random().toString(36).substring(2, 9)
@@ -150,32 +137,44 @@ export const useBoard = create<State>((set, get) => {
       const item: Saved = { id, name, keys: mapped, case: kase, shape }
       const boards = [...get().boards, item]
       write(boards)
-      set({ keys: mapped, boards, active: id, background: bg })
+      set({ keys: mapped, boards, active: id, background: bg, dirty: false })
+    },
+
+    commit: (keys) => {
+      const { active, boards, case: kase, shape } = get()
+      if (!active) {
+        const id = Math.random().toString(36).substring(2, 9)
+        const name = `board ${boards.length + 1}`
+        const item: Saved = { id, name, keys, case: kase, shape }
+        const updatedBoards = [...boards, item]
+        write(updatedBoards)
+        set({ keys, boards: updatedBoards, active: id, dirty: false })
+        return
+      }
+      const updatedBoards = boards.map((b) => (b.id === active ? { ...b, keys, case: kase, shape } : b))
+      write(updatedBoards)
+      set({ keys, boards: updatedBoards, dirty: false })
     },
 
     paint: (id, color, textColor) => {
       const updatedKeys = get().keys.map((k) => (k.id === id ? { ...k, color, textColor } : k))
-      set({ keys: updatedKeys })
-      syncAndWrite(updatedKeys)
+      set({ keys: updatedKeys, dirty: true })
     },
 
     select: (id) => set({ selected: id }),
 
     legend: (id, text) => {
       const updatedKeys = get().keys.map((k) => (k.id === id ? { ...k, legend: text } : k))
-      set({ keys: updatedKeys })
-      syncAndWrite(updatedKeys)
+      set({ keys: updatedKeys, dirty: true })
     },
 
     shell: (color) => {
-      set({ case: color })
-      syncAndWrite(undefined, color)
+      set({ case: color, dirty: true })
     },
 
     mold: (shape) => {
       const updatedShape = { ...get().shape, ...shape }
-      set({ shape: updatedShape })
-      syncAndWrite(undefined, undefined, updatedShape)
+      set({ shape: updatedShape, dirty: true })
     },
 
     modeSet: (mode) => set({ mode }),
@@ -189,7 +188,7 @@ export const useBoard = create<State>((set, get) => {
       const item: Saved = { id, name, keys, case: kase, shape }
       const boards = [...get().boards, item]
       write(boards)
-      set({ boards, active: id })
+      set({ boards, active: id, dirty: false })
     },
 
     open: (id) => {
@@ -210,7 +209,7 @@ export const useBoard = create<State>((set, get) => {
             bg = col
           }
         }
-        set({ keys: mapped, case: target.case, shape: target.shape, active: target.id, background: bg })
+        set({ keys: mapped, case: target.case, shape: target.shape, active: target.id, background: bg, dirty: false })
       }
     },
 
@@ -249,8 +248,7 @@ export const useBoard = create<State>((set, get) => {
         }
       })
       const bg = scheme.swatches.accent?.background || scheme.swatches.base?.background || get().background
-      set({ keys: updated, scheme: scheme.id, background: bg })
-      syncAndWrite(updated)
+      set({ keys: updated, scheme: scheme.id, background: bg, dirty: true })
     },
 
     store: () => {
@@ -258,7 +256,7 @@ export const useBoard = create<State>((set, get) => {
       if (!active) return
       const updated = boards.map((b) => (b.id === active ? { ...b, keys, case: kase, shape } : b))
       write(updated)
-      set({ boards: updated })
+      set({ boards: updated, dirty: false })
     },
 
     init: async () => {
