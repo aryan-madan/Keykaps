@@ -32,9 +32,7 @@ Press and interact with the keys with your keyboard to see the 3D model react to
 
 And much, much more.
 
-### AI Usage
+## AI Usage
 AI was used for debugging.
-
----
 
 Made with ❤️ by Ary
