@@ -1,6 +1,6 @@
 ![Banner](public/designs/og.png)
 
-### Turn Your Keyboard Layouts Into Interactive 3D Models
+# Turn Your Keyboard Layouts Into Interactive 3D Models
 
 I've always wanted a tool where you can see and experience a keyboard layout before building it. So, I decided to build it myself! Introducing, **Keykaps**!
 
