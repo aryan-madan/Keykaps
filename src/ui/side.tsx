@@ -58,8 +58,9 @@ export function Side() {
   const [err, setErr] = useState(false)
   const [drag, setDrag] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
+  const [editingBoardId, setEditingBoardId] = useState<string | null>(null)
+  
   const ref = useRef<HTMLInputElement>(null)
-
   const lastSavedSnapshot = useRef<string>('')
   const activeBoard = boards.find((b) => b.id === active)
 
@@ -94,16 +95,24 @@ export function Side() {
   useEffect(() => {
     const files = ['olivia', 'port', 'prussian', 'makima']
 
-    files.forEach((file) => {
-      fetch(`/colorways/${file}.json`)
-        .then((res) => res.json())
-        .then((data) => {
-          if (data?.id) {
-            add(data)
-            apply(data)
-          }
-        })
-        .catch(() => { })
+    Promise.all(
+      files.map((file) =>
+        fetch(`/colorways/${file}.json`)
+          .then((res) => res.json())
+          .catch(() => null)
+      )
+    ).then((results) => {
+      const loadedSchemes: Scheme[] = []
+      results.forEach((data) => {
+        if (data?.id) {
+          add(data)
+          loadedSchemes.push(data)
+        }
+      })
+      const state = useBoard.getState()
+      if (!state.scheme && loadedSchemes.length > 0) {
+        apply(loadedSchemes[0])
+      }
     })
   }, [add, apply])
 
@@ -250,10 +259,11 @@ export function Side() {
     transitionDelay: show ? `${60 + index * 45}ms` : '0ms'
   })
 
-  const blurItemClass = `transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${show
+  const blurItemClass = `transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+    show
       ? 'opacity-100 blur-0 translate-y-0 scale-100'
       : 'opacity-0 blur-xl -translate-y-2 scale-95 pointer-events-none'
-    }`
+  }`
 
   return (
     <>
@@ -283,19 +293,21 @@ export function Side() {
       `}</style>
 
       <div
-        className={`fixed left-5 top-5 z-50 font-sans bg-zinc-950 transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] ${show
-            ? 'h-[calc(100vh-40px)] w-[250px] rounded-2xl shadow-2xl'
-            : 'h-9 w-9 rounded-xl shadow-lg hover:bg-zinc-900'
-          }`}
+        style={{
+          width: show ? '250px' : '40px',
+          height: show ? 'calc(100vh - 40px)' : '40px'
+        }}
+        className="fixed left-5 top-5 z-50 font-sans bg-zinc-950 transition-all duration-350 ease-[cubic-bezier(0.16,1,0.3,1)] rounded-2xl shadow-2xl overflow-hidden"
       >
         {!show ? (
           <button
             onClick={() => setShow(true)}
-            className="flex h-full w-full items-center justify-center text-zinc-300 hover:text-zinc-100 transition-colors duration-150 relative"
+            className="flex h-full w-full items-center justify-center transition-colors duration-150 relative group"
+            title="open menu"
           >
-            <FiMenu className="h-3.5 w-3.5" />
+            <FiMenu className="h-4 w-4 text-zinc-300 transition-transform duration-300 group-hover:scale-105" />
             {isDirty && (
-              <span className="absolute top-2 right-2 h-1 w-1 rounded-full bg-zinc-500" />
+              <span className="absolute top-2 right-2 h-1.5 w-1.5 rounded-full bg-zinc-400" />
             )}
           </button>
         ) : (
@@ -304,7 +316,9 @@ export function Side() {
               style={getBlurItemStyle(0)}
               className={`flex h-12 shrink-0 items-center justify-between px-3.5 pt-1 ${blurItemClass}`}
             >
-              <span className="font-cherry text-xl tracking-wide text-zinc-100">keykaps</span>
+              <div className="flex items-center gap-2">
+                <span className="font-cherry text-xl tracking-wide text-zinc-100">keykaps</span>
+              </div>
               <button
                 onClick={() => setShow(false)}
                 className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
@@ -319,19 +333,20 @@ export function Side() {
             >
               <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-xl">
                 {([
-                  ['editor', 'Editor', FiSliders],
-                  ['colorways', 'Colors', FiDroplet],
-                  ['boards', 'Boards', FiLayers]
+                  ['editor', 'editor', FiSliders],
+                  ['colorways', 'colors', FiDroplet],
+                  ['boards', 'boards', FiLayers]
                 ] as const).map(([id, label, Icon]) => {
                   const isActiveTab = tab === id
                   return (
                     <button
                       key={id}
                       onClick={() => setTab(id)}
-                      className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] font-medium transition-all duration-150 ${isActiveTab
+                      className={`flex items-center justify-center gap-1.5 rounded-lg py-1.5 text-[10px] font-medium transition-all duration-150 ${
+                        isActiveTab
                           ? 'bg-zinc-100 text-zinc-950 font-semibold'
                           : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                        }`}
+                      }`}
                     >
                       <Icon className="h-3 w-3" />
                       <span>{label}</span>
@@ -349,14 +364,14 @@ export function Side() {
                       style={getBlurItemStyle(2)}
                       className={`space-y-1 ${blurItemClass}`}
                     >
-                      <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                        Layout Name
+                      <label className="text-[9px] font-medium text-zinc-500 px-1">
+                        layout name
                       </label>
                       <input
                         type="text"
                         value={boards.find((b) => b.id === active)?.name || ''}
                         onChange={(e) => rename(active, e.target.value)}
-                        placeholder="Custom layout"
+                        placeholder="custom layout"
                         className="h-8 w-full bg-zinc-900 text-zinc-100 rounded-xl px-3 text-[11px] outline-none transition placeholder:text-zinc-600 focus:bg-zinc-800"
                       />
                     </div>
@@ -366,15 +381,15 @@ export function Side() {
                     style={getBlurItemStyle(3)}
                     className={`space-y-1 ${blurItemClass}`}
                   >
-                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                      Mode
+                    <label className="text-[9px] font-medium text-zinc-500 px-1">
+                      mode
                     </label>
                     <button
                       onClick={() => modeSet(mode === 'edit' ? 'view' : 'edit')}
                       className="flex h-8 w-full items-center justify-between bg-zinc-900 hover:bg-zinc-800 px-3 rounded-xl text-[11px] transition"
                     >
-                      <span className="text-zinc-200">{mode === 'edit' ? 'Painting' : 'Inspecting'}</span>
-                      <span className="text-[9px] text-zinc-500 font-mono">Toggle</span>
+                      <span className="text-zinc-200">{mode === 'edit' ? 'painting' : 'inspecting'}</span>
+                      <span className="text-[9px] text-zinc-500 font-mono">toggle</span>
                     </button>
                   </div>
 
@@ -382,15 +397,15 @@ export function Side() {
                     style={getBlurItemStyle(4)}
                     className={`space-y-1 ${blurItemClass}`}
                   >
-                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                      Background
+                    <label className="text-[9px] font-medium text-zinc-500 px-1">
+                      background
                     </label>
                     <button
                       onClick={() => envSet(!env)}
                       className="flex h-8 w-full items-center justify-between bg-zinc-900 hover:bg-zinc-800 px-3 rounded-xl text-[11px] transition"
                     >
-                      <span className="text-zinc-200">{env ? 'Enabled' : 'Disabled'}</span>
-                      <span className="text-[9px] text-zinc-500 font-mono">Toggle</span>
+                      <span className="text-zinc-200">{env ? 'enabled' : 'disabled'}</span>
+                      <span className="text-[9px] text-zinc-500 font-mono">toggle</span>
                     </button>
                   </div>
 
@@ -398,8 +413,8 @@ export function Side() {
                     style={getBlurItemStyle(5)}
                     className={`space-y-1 ${blurItemClass}`}
                   >
-                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                      Key Legend
+                    <label className="text-[9px] font-medium text-zinc-500 px-1">
+                      key legend
                     </label>
                     {item ? (
                       <input
@@ -409,12 +424,12 @@ export function Side() {
                           setText(e.target.value)
                           legend(item.id, e.target.value)
                         }}
-                        placeholder="Enter legend..."
+                        placeholder="enter legend..."
                         className="h-8 w-full bg-zinc-900 text-zinc-100 rounded-xl px-3 text-[11px] outline-none transition placeholder:text-zinc-600 focus:bg-zinc-800"
                       />
                     ) : (
                       <div className="flex h-8 items-center bg-zinc-900 px-3 rounded-xl text-[10px] text-zinc-600 font-mono">
-                        Select a key
+                        select a key
                       </div>
                     )}
                   </div>
@@ -423,11 +438,11 @@ export function Side() {
                     style={getBlurItemStyle(6)}
                     className={`space-y-1 ${blurItemClass}`}
                   >
-                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                      Case Color
+                    <label className="text-[9px] font-medium text-zinc-500 px-1">
+                      case color
                     </label>
                     <div className="flex items-center justify-between bg-zinc-900 px-3 py-1.5 rounded-xl">
-                      <span className="text-[11px] text-zinc-400">Hex</span>
+                      <span className="text-[11px] text-zinc-400">hex</span>
                       <div className="flex items-center gap-2">
                         <input
                           type="color"
@@ -446,8 +461,8 @@ export function Side() {
                     style={getBlurItemStyle(7)}
                     className={`space-y-1 ${blurItemClass}`}
                   >
-                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                      Active Brush
+                    <label className="text-[9px] font-medium text-zinc-500 px-1">
+                      active brush
                     </label>
                     {currentScheme ? (
                       <div className="bg-zinc-900 rounded-xl p-1 space-y-0.5">
@@ -457,12 +472,13 @@ export function Side() {
                             <button
                               key={name}
                               onClick={() => brushSet({ name, swatch })}
-                              className={`flex h-7 w-full items-center justify-between px-2.5 text-[11px] rounded-lg transition ${activeBrush
+                              className={`flex h-7 w-full items-center justify-between px-2.5 text-[11px] rounded-lg transition ${
+                                activeBrush
                                   ? 'bg-zinc-100 text-zinc-950 font-semibold'
                                   : 'text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800'
-                                }`}
+                              }`}
                             >
-                              <span className="capitalize">{name}</span>
+                              <span className="lowercase">{name}</span>
                               <span className="flex items-center gap-1">
                                 <span className="h-3 w-3 rounded-md" style={{ backgroundColor: swatch.background }} />
                                 <span className="h-3 w-3 rounded-md" style={{ backgroundColor: swatch.color }} />
@@ -472,7 +488,7 @@ export function Side() {
                         })}
                       </div>
                     ) : (
-                      <div className="text-[10px] text-zinc-600 px-1">No palette loaded.</div>
+                      <div className="text-[10px] text-zinc-600 px-1">no palette loaded.</div>
                     )}
                   </div>
                 </div>
@@ -484,54 +500,57 @@ export function Side() {
                     style={getBlurItemStyle(2)}
                     className={`space-y-1 ${blurItemClass}`}
                   >
-                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                      Saved Colorways
+                    <label className="text-[9px] font-medium text-zinc-500 px-1">
+                      saved colorways
                     </label>
-                    {schemes.map((s) => {
-                      const activeItem = scheme === s.id
-                      return (
-                        <div
-                          key={s.id}
-                          className={`flex items-center justify-between rounded-xl px-3 py-2 text-[11px] font-medium transition ${activeItem
-                              ? 'bg-zinc-100 text-zinc-950 font-semibold'
-                              : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
-                            }`}
-                        >
-                          <button
+                    <div className="space-y-1">
+                      {schemes.map((s) => {
+                        const activeItem = scheme === s.id
+                        return (
+                          <div
+                            key={s.id}
                             onClick={() => apply(s)}
-                            className="flex-1 text-left flex items-center justify-between pr-2"
+                            className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
+                              activeItem
+                                ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
+                                : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
+                            }`}
                           >
-                            <span>{s.label}</span>
-                          </button>
-                          {activeItem && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                exportPalette(s)
-                              }}
-                              className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-800 hover:text-zinc-950 hover:bg-zinc-200 transition-colors"
-                              title="Export Scheme"
-                            >
-                              <FiDownload className="h-3.5 w-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      )
-                    })}
+                            <span className={`min-w-0 flex-1 truncate px-1 text-[11px] ${
+                              activeItem ? 'text-zinc-950 font-semibold' : 'text-zinc-100 font-medium'
+                            }`}>
+                              {s.label}
+                            </span>
+
+                            {activeItem && (
+                              <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                <button
+                                  onClick={() => exportPalette(s)}
+                                  className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-800 hover:text-zinc-950 hover:bg-zinc-200 transition"
+                                  title="export scheme"
+                                >
+                                  <FiDownload className="h-3 w-3" />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+                        )
+                      })}
+                    </div>
                   </div>
 
                   <div
                     style={getBlurItemStyle(3)}
                     className={`space-y-2 pt-2 ${blurItemClass}`}
                   >
-                    <span className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                      Custom Palette
+                    <span className="text-[9px] font-medium text-zinc-500 px-1">
+                      custom palette
                     </span>
                     <input
                       type="text"
                       value={inputName}
                       onChange={(e) => setInputName(e.target.value)}
-                      placeholder="Palette name"
+                      placeholder="palette name"
                       className="h-8 w-full bg-zinc-900 text-zinc-100 rounded-xl px-3 text-[11px] outline-none placeholder:text-zinc-600 focus:bg-zinc-800 transition"
                     />
                     <div className="bg-zinc-900 rounded-xl p-1 space-y-0.5">
@@ -541,7 +560,7 @@ export function Side() {
                         ['accent', accentBg, accentFg, setAccentBg, setAccentFg]
                       ].map(([label, bg, fg, setBg, setFg]) => (
                         <div key={label as string} className="flex h-7 items-center justify-between px-2.5 rounded-lg hover:bg-zinc-800">
-                          <span className="text-[11px] text-zinc-300 capitalize">{label as string}</span>
+                          <span className="text-[11px] text-zinc-300 lowercase">{label as string}</span>
                           <div className="flex items-center gap-2">
                             <input
                               type="color"
@@ -563,7 +582,7 @@ export function Side() {
                       onClick={create}
                       className="w-full rounded-xl bg-zinc-900 hover:bg-zinc-800 py-2 text-[11px] font-semibold text-zinc-200 transition active:scale-[0.98]"
                     >
-                      Save Palette
+                      save palette
                     </button>
                   </div>
                 </div>
@@ -575,8 +594,8 @@ export function Side() {
                     style={getBlurItemStyle(2)}
                     className={`space-y-1 ${blurItemClass}`}
                   >
-                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                      Import
+                    <label className="text-[9px] font-medium text-zinc-500 px-1">
+                      import
                     </label>
                     <div
                       onDrop={(e: DragEvent) => {
@@ -589,8 +608,9 @@ export function Side() {
                         setDrag(true)
                       }}
                       onDragLeave={() => setDrag(false)}
-                      className={`flex items-center gap-1.5 rounded-xl bg-zinc-900 p-1.5 transition ${drag ? 'bg-zinc-800' : err ? 'bg-red-950' : ''
-                        }`}
+                      className={`flex items-center gap-1.5 rounded-xl bg-zinc-900 p-1.5 transition ${
+                        drag ? 'bg-zinc-800' : err ? 'bg-red-950' : ''
+                      }`}
                     >
                       <input
                         value={json}
@@ -601,7 +621,7 @@ export function Side() {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') proc(json)
                         }}
-                        placeholder="Paste JSON or drop..."
+                        placeholder="paste json or drop..."
                         className="h-7 min-w-0 flex-1 bg-transparent px-2 text-[11px] text-zinc-100 outline-none placeholder:text-zinc-600"
                       />
                       <button
@@ -624,60 +644,78 @@ export function Side() {
                         className="hidden"
                       />
                     </div>
-                    {err && <div className="px-1 text-[9px] text-red-400">Invalid layout format</div>}
+                    {err && <div className="px-1 text-[9px] text-red-400">invalid layout format</div>}
                   </div>
 
                   <div
                     style={getBlurItemStyle(3)}
                     className={`space-y-1 ${blurItemClass}`}
                   >
-                    <label className="text-[9px] font-semibold uppercase tracking-wider text-zinc-500 px-1">
-                      Layouts List
+                    <label className="text-[9px] font-medium text-zinc-500 px-1">
+                      layouts list
                     </label>
                     <div className="space-y-1">
                       {boards.length === 0 ? (
                         <div className="py-4 text-center text-[10px] font-mono text-zinc-600">
-                          No layouts found.
+                          no layouts found.
                         </div>
                       ) : (
                         boards.map((b) => {
                           const activeItem = active === b.id
+                          const isEditing = editingBoardId === b.id
                           return (
                             <div
                               key={b.id}
-                              className={`flex items-center justify-between rounded-xl bg-zinc-900 p-2 transition ${activeItem ? 'bg-zinc-800' : 'hover:bg-zinc-850'
-                                }`}
+                              onClick={() => {
+                                if (!activeItem) open(b.id)
+                              }}
+                              onDoubleClick={() => setEditingBoardId(b.id)}
+                              className={`flex items-center justify-between rounded-xl px-3 py-2 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] cursor-pointer ${
+                                activeItem
+                                  ? 'bg-zinc-100 text-zinc-950 font-semibold shadow-sm'
+                                  : 'bg-zinc-900 text-zinc-300 hover:bg-zinc-800'
+                              }`}
                             >
-                              <input
-                                type="text"
-                                value={b.name}
-                                onChange={(e) => rename(b.id, e.target.value)}
-                                className="min-w-0 flex-1 bg-transparent px-1 text-[11px] font-medium text-zinc-100 outline-none"
-                              />
-                              <div className="flex items-center gap-1 shrink-0">
-                                <button
-                                  onClick={() => open(b.id)}
-                                  className={`rounded-lg px-2.5 py-1 text-[9px] font-semibold transition ${activeItem
-                                      ? 'bg-zinc-100 text-zinc-950'
-                                      : 'bg-zinc-800 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-700'
-                                    }`}
-                                >
-                                  {activeItem ? 'loaded' : 'load'}
-                                </button>
-                                <button
-                                  onClick={() => exportFile(b.id)}
-                                  className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-800 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-700 transition"
-                                  title="Export Layout"
-                                >
-                                  <FiDownload className="h-3 w-3" />
-                                </button>
-                                <button
-                                  onClick={() => drop(b.id)}
-                                  className="flex h-6 w-6 items-center justify-center rounded-lg bg-zinc-800 text-zinc-500 hover:text-red-400 hover:bg-zinc-700 transition"
-                                >
-                                  <FiTrash2 className="h-3 w-3" />
-                                </button>
-                              </div>
+                              {isEditing ? (
+                                <input
+                                  type="text"
+                                  autoFocus
+                                  value={b.name}
+                                  onChange={(e) => rename(b.id, e.target.value)}
+                                  onBlur={() => setEditingBoardId(null)}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter') setEditingBoardId(null)
+                                  }}
+                                  className={`min-w-0 flex-1 bg-transparent px-1 text-[11px] outline-none ${
+                                    activeItem ? 'text-zinc-950 font-semibold' : 'text-zinc-100 font-medium'
+                                  }`}
+                                />
+                              ) : (
+                                <span className={`min-w-0 flex-1 truncate px-1 text-[11px] ${
+                                  activeItem ? 'text-zinc-950 font-semibold' : 'text-zinc-100 font-medium'
+                                }`}>
+                                  {b.name}
+                                </span>
+                              )}
+
+                              {activeItem && (
+                                <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+                                  <button
+                                    onClick={() => exportFile(b.id)}
+                                    className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-800 hover:text-zinc-950 hover:bg-zinc-200 transition"
+                                    title="export layout"
+                                  >
+                                    <FiDownload className="h-3 w-3" />
+                                  </button>
+                                  <button
+                                    onClick={() => drop(b.id)}
+                                    className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-800 hover:text-red-600 hover:bg-zinc-200 transition"
+                                    title="delete layout"
+                                  >
+                                    <FiTrash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                              )}
                             </div>
                           )
                         })
