@@ -725,19 +725,17 @@ export function Side() {
               )}
             </div>
 
-            {dirty && active && (
-              <div className="absolute bottom-10 left-0 right-0 py-1.5 flex justify-center transition-all duration-200">
-                <button
-                  onClick={() => save(active)}
-                  className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-[10px] text-zinc-300 hover:text-zinc-100 font-medium transition-all"
-                >
-                  <span>unsaved changes</span>
-                  <kbd className="inline-flex items-center gap-0.5 text-[9px] font-sans text-zinc-400">
-                    <span>⌘</span>S
-                  </kbd>
-                </button>
-              </div>
-            )}
+            <div className={`absolute bottom-10 left-0 right-0 py-1.5 flex justify-center transition-all duration-200 pointer-events-none ${dirty && active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+              <button
+                onClick={() => active && save(active)}
+                className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-[10px] text-zinc-300 hover:text-zinc-100 font-medium transition-all shadow-lg"
+              >
+                <span>unsaved changes</span>
+                <kbd className="inline-flex items-center gap-0.5 text-[9px] font-sans text-zinc-400">
+                  <span>⌘</span>S
+                </kbd>
+              </button>
+            </div>
 
             <div className="flex h-10 shrink-0 items-center justify-center px-3.5 bg-zinc-950 border-t border-zinc-900/60 rounded-b-2xl">
               <span className="text-[10px] text-zinc-600 font-medium tracking-wide">made with ♡ by ary</span>

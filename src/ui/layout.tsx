@@ -14,6 +14,7 @@ const cats = [
 export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
     const keys = useBoard((state) => state.keys)
     const load = useBoard((state) => state.load)
+    const store = useBoard((state) => state.store)
     const schemes = useBoard((state) => state.schemes)
     const scheme = useBoard((state) => state.scheme)
 
@@ -22,12 +23,14 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
     const [zoom, setZoom] = useState(40)
     const [pan] = useState({ x: 100, y: 100 })
     const [cat, setCat] = useState('letters')
+    const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 
     const isInitialized = useRef(false)
 
     useEffect(() => {
         if (vis && !isInitialized.current) {
             setLocalKeys(keys)
+            setHasUnsavedChanges(false)
             isInitialized.current = true
         }
         if (!vis) {
@@ -35,8 +38,27 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
         }
     }, [vis, keys])
 
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') {
+                e.preventDefault()
+                if (hasUnsavedChanges) {
+                    store()
+                    setHasUnsavedChanges(false)
+                }
+            }
+        }
+        window.addEventListener('keydown', handleKeyDown)
+        return () => window.removeEventListener('keydown', handleKeyDown)
+    }, [hasUnsavedChanges, store])
+
     const handleClose = () => {
         exit()
+    }
+
+    const handleSave = () => {
+        store()
+        setHasUnsavedChanges(false)
     }
 
     function addkey() {
@@ -63,6 +85,7 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
         setLocalKeys(updated)
         load(updated)
         setSel(item.id)
+        setHasUnsavedChanges(true)
     }
 
     function delkey() {
@@ -71,6 +94,7 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
         setLocalKeys(updated)
         load(updated)
         setSel(null)
+        setHasUnsavedChanges(true)
     }
 
     function move(dx: number, dy: number) {
@@ -78,6 +102,7 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
         const updated = localKeys.map((k) => (k.id === sel ? { ...k, x: Math.round((k.x + dx) * 4) / 4, y: Math.round((k.y + dy) * 4) / 4 } : k))
         setLocalKeys(updated)
         load(updated)
+        setHasUnsavedChanges(true)
     }
 
     function update(field: keyof Key, val: any) {
@@ -85,6 +110,7 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
         const updated = localKeys.map((k) => (k.id === sel ? { ...k, [field]: val } : k))
         setLocalKeys(updated)
         load(updated)
+        setHasUnsavedChanges(true)
     }
 
     function stepValue(field: keyof Key, amount: number, min: number = 0) {
@@ -179,6 +205,18 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
                             className="flex items-center justify-center h-7 w-7 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-red-400 disabled:opacity-40 transition"
                         >
                             <FiTrash2 className="h-3.5 w-3.5" />
+                        </button>
+                    </div>
+
+                    <div className={`absolute bottom-10 left-0 right-0 py-1.5 flex justify-center transition-all duration-200 pointer-events-none ${hasUnsavedChanges ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
+                        <button
+                            onClick={handleSave}
+                            className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-[10px] text-zinc-300 hover:text-zinc-100 font-medium transition-all shadow-lg"
+                        >
+                            <span>unsaved changes</span>
+                            <kbd className="inline-flex items-center gap-0.5 text-[9px] font-sans text-zinc-400">
+                                <span>⌘</span>S
+                            </kbd>
                         </button>
                     </div>
                 </div>
