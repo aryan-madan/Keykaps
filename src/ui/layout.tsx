@@ -218,14 +218,6 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
                         </div>
                     </div>
 
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-2">
-                        <button
-                            onClick={handleSave}
-                            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-[11px] font-medium transition shadow-lg"
-                        >
-                            <span>save board</span>
-                        </button>
-                    </div>
                 </div>
 
                 <div className="w-80 bg-zinc-950 border-l border-zinc-900 p-4 flex flex-col space-y-3 overflow-y-auto">
