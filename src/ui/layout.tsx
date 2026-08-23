@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useMemo } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useBoard, type Key } from '../store/board'
 import { FiPlus, FiTrash2, FiArrowUp, FiArrowDown, FiArrowLeft, FiArrowRight, FiX, FiMaximize2, FiChevronUp, FiChevronDown } from 'react-icons/fi'
 
@@ -20,7 +20,7 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
     const [localKeys, setLocalKeys] = useState<Key[]>(keys)
     const [sel, setSel] = useState<string | null>(null)
     const [zoom, setZoom] = useState(40)
-    const [pan, setPan] = useState({ x: 100, y: 100 })
+    const [pan] = useState({ x: 100, y: 100 })
     const [cat, setCat] = useState('letters')
 
     const isInitialized = useRef(false)
@@ -50,6 +50,11 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
             r: 0,
             rx: 0,
             ry: 0,
+            x2: 0,
+            y2: 0,
+            w2: 1,
+            h2: 1,
+            row: 0,
             legend: '',
             color: 'base',
             textColor: ''
