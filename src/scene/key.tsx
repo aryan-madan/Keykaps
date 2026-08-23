@@ -69,6 +69,33 @@ export function Key({ data, mid }: Props) {
     }
   }, [data.legend])
 
+  useEffect(() => {
+    if (down) {
+      const legend = data.legend?.toLowerCase() || ''
+      let filename = 'sound.ogg'
+      if (legend === 'space' || legend === '') filename = 'space.wav'
+      else if (legend === 'enter') filename = 'enter.wav'
+      else if (legend === 'backspace') filename = 'backspace.wav'
+      else if (legend === 'shift') filename = 'shift.wav'
+      else if (legend === 'tab') filename = 'tab.wav'
+      else if (legend === 'caps lock') filename = 'caps lock.wav'
+      else if (legend.length === 1 || legend === '[' || legend === ']') filename = `${legend}.wav`
+
+      const playAudio = (path: string, isFallback = false) => {
+        const audio = new Audio(path)
+        audio.volume = 1.0
+        
+        audio.play().catch(() => {
+          if (!isFallback && path !== '/sounds/caps lock.wav') {
+            playAudio('/sounds/caps lock.wav', true)
+          }
+        })
+      }
+
+      playAudio(`/sounds/${filename}`)
+    }
+  }, [down, data.legend])
+
   useFrame((_, delta) => {
     if (!ref.current) return
     const targetY = down ? -0.15 : 0
