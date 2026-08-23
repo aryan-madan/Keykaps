@@ -26,7 +26,7 @@ You can create colorways for your favorite keycaps and paint on the keyboard wit
 
 ## Sounds
 
-[Keyboard sounds](assets/sounds.mp4)
+https://github.com/user-attachments/assets/4f19c780-f8ce-474a-856b-8781e0518bd4
 
 Press and interact with the keys with your keyboard to see the 3D model react to it. The sound files are very thocky!
 
