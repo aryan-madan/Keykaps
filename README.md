@@ -35,4 +35,6 @@ And much, much more.
 ## AI Usage
 AI was used for debugging.
 
+GIF visuals were recorded and created using my project [Glare!](https://github.com/aryan-madan/Glare)
+
 Made with ❤️ by Ary
