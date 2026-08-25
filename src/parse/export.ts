@@ -112,7 +112,7 @@ function cap(key: Key, z: number) {
   if (img) {
     const dpos = new THREE.Vector3(0, prof.height - prof.dish * 0.5, 0)
     const drot = new THREE.Euler(-Math.PI / 2 + prof.tilt, 0, 0)
-    const dsiz = new THREE.Vector3(tw * 0.9, td * 0.9, 0.6)
+    const dsiz = new THREE.Vector3(tw * 0.9, td * 0.9, 2.0)
     const dgeom = new Decal(head, dpos, drot, dsiz)
 
     const pos = dgeom.attributes.position
@@ -120,9 +120,9 @@ function cap(key: Key, z: number) {
     for (let i = 0; i < pos.count; i++) {
       pos.setXYZ(
         i,
-        pos.getX(i) + norm.getX(i) * 0.002,
-        pos.getY(i) + norm.getY(i) * 0.002,
-        pos.getZ(i) + norm.getZ(i) * 0.002
+        pos.getX(i) + norm.getX(i) * 0.005,
+        pos.getY(i) + norm.getY(i) * 0.005,
+        pos.getZ(i) + norm.getZ(i) * 0.005
       )
     }
 
