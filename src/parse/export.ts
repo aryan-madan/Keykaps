@@ -11,6 +11,8 @@ import { bound } from '../layout/bound'
 import { center } from '../layout/center'
 import { raise, tilt } from '../layout/tilt'
 
+export type Kind = 'full' | 'case' | string
+
 const gap = 0.08
 
 export function dump(board: Saved): string {
@@ -343,5 +345,5 @@ export async function stl(board: Saved, kind: Kind): Promise<Blob> {
   const root = await build(board, kind)
   const exp = new STL()
   const buf = exp.parse(root, { binary: true }) as unknown as DataView
-  return new Blob([buf], { type: 'model/stl' })
+  return new Blob([buf.buffer as ArrayBuffer], { type: 'model/stl' })
 }
