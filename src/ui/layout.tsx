@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useBoard, type Key } from '../store/board'
+import { row } from '../parse/row'
 import { FiPlus, FiTrash2, FiArrowUp, FiArrowDown, FiArrowLeft, FiArrowRight, FiX, FiMaximize2, FiChevronUp, FiChevronDown } from 'react-icons/fi'
 
 const cats = [
@@ -20,11 +21,34 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
     const [localKeys, setLocalKeys] = useState<Key[]>(keys)
     const [sel, setSel] = useState<string | null>(null)
     const [zoom, setZoom] = useState(40)
-    const [pan] = useState({ x: 100, y: 100 })
+    const [pan, setPan] = useState({ x: 100, y: 100 })
     const [cat, setCat] = useState('letters')
     const [dirty, setDirty] = useState(false)
 
     const isInitialized = useRef(false)
+    const isPanning = useRef(false)
+    const panStart = useRef({ x: 0, y: 0 })
+    const interactionRef = useRef<{
+        type: 'drag' | 'resize' | null
+        keyId: string | null
+        handle: string | null
+        startX: number
+        startY: number
+        initialKeyX: number
+        initialKeyY: number
+        initialKeyW: number
+        initialKeyH: number
+    }>({
+        type: null,
+        keyId: null,
+        handle: null,
+        startX: 0,
+        startY: 0,
+        initialKeyX: 0,
+        initialKeyY: 0,
+        initialKeyW: 1,
+        initialKeyH: 1,
+    })
 
     useEffect(() => {
         if (vis && !isInitialized.current) {
@@ -63,10 +87,11 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
 
     function addkey() {
         const prev = localKeys[localKeys.length - 1]
+        const newY = prev ? prev.y : 0
         const item: Key = {
             id: Math.random().toString(36).substring(2, 9),
             x: prev ? prev.x + prev.w : 0,
-            y: prev ? prev.y : 0,
+            y: newY,
             w: 1,
             h: 1,
             r: 0,
@@ -76,7 +101,7 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
             y2: 0,
             w2: 1,
             h2: 1,
-            row: 0,
+            row: row(newY),
             legend: '',
             color: 'base',
             textColor: ''
@@ -97,14 +122,30 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
 
     function move(dx: number, dy: number) {
         if (!sel) return
-        const updated = localKeys.map((k) => (k.id === sel ? { ...k, x: Math.round((k.x + dx) * 4) / 4, y: Math.round((k.y + dy) * 4) / 4 } : k))
+        const updated = localKeys.map((k) => {
+            if (k.id === sel) {
+                const newY = Math.round((k.y + dy) * 4) / 4
+                const newX = Math.round((k.x + dx) * 4) / 4
+                return { ...k, x: newX, y: newY, row: row(newY) }
+            }
+            return k
+        })
         setLocalKeys(updated)
         setDirty(true)
     }
 
     function update(field: keyof Key, val: any) {
         if (!sel) return
-        const updated = localKeys.map((k) => (k.id === sel ? { ...k, [field]: val } : k))
+        const updated = localKeys.map((k) => {
+            if (k.id === sel) {
+                const updatedKey = { ...k, [field]: val }
+                if (field === 'y') {
+                    updatedKey.row = row(Number(val) || 0)
+                }
+                return updatedKey
+            }
+            return k
+        })
         setLocalKeys(updated)
         setDirty(true)
     }
@@ -114,6 +155,121 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
         const currentVal = Number(curkey[field]) || 0
         const newVal = Math.max(min, Math.round((currentVal + amount) * 4) / 4)
         update(field, newVal)
+    }
+
+    const handleMouseDownCanvas = (e: React.MouseEvent) => {
+        if (e.button === 0 && (e.target as HTMLElement).dataset.canvas === 'true') {
+            isPanning.current = true
+            panStart.current = { x: e.clientX - pan.x, y: e.clientY - pan.y }
+            setSel(null)
+        }
+    }
+
+    const handleMouseDownKey = (e: React.MouseEvent, k: Key) => {
+        if (e.button !== 0) return
+        e.stopPropagation()
+        setSel(k.id)
+        isPanning.current = false
+        interactionRef.current = {
+            type: 'drag',
+            keyId: k.id,
+            handle: null,
+            startX: e.clientX,
+            startY: e.clientY,
+            initialKeyX: k.x,
+            initialKeyY: k.y,
+            initialKeyW: k.w,
+            initialKeyH: k.h,
+        }
+    }
+
+    const handleMouseDownResize = (e: React.MouseEvent, k: Key, handle: string) => {
+        if (e.button !== 0) return
+        e.stopPropagation()
+        setSel(k.id)
+        isPanning.current = false
+        interactionRef.current = {
+            type: 'resize',
+            keyId: k.id,
+            handle,
+            startX: e.clientX,
+            startY: e.clientY,
+            initialKeyX: k.x,
+            initialKeyY: k.y,
+            initialKeyW: k.w,
+            initialKeyH: k.h,
+        }
+    }
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (isPanning.current) {
+            setPan({
+                x: e.clientX - panStart.current.x,
+                y: e.clientY - panStart.current.y,
+            })
+            return
+        }
+
+        const { type, keyId, handle, startX, startY, initialKeyX, initialKeyY, initialKeyW, initialKeyH } = interactionRef.current
+        if (!type || !keyId) return
+
+        const scale = zoom * 1.2
+        const dx = (e.clientX - startX) / scale
+        const dy = (e.clientY - startY) / scale
+
+        setLocalKeys((prevKeys) =>
+            prevKeys.map((k) => {
+                if (k.id !== keyId) return k
+
+                if (type === 'drag') {
+                    const newX = Math.round((initialKeyX + dx) * 4) / 4
+                    const newY = Math.round((initialKeyY + dy) * 4) / 4
+                    return { ...k, x: newX, y: newY, row: row(newY) }
+                }
+
+                if (type === 'resize' && handle) {
+                    let newX = initialKeyX
+                    let newY = initialKeyY
+                    let newW = initialKeyW
+                    let newH = initialKeyH
+
+                    if (handle.includes('r')) {
+                        newW = Math.max(0.25, Math.round((initialKeyW + dx) * 4) / 4)
+                    }
+                    if (handle.includes('b')) {
+                        newH = Math.max(0.25, Math.round((initialKeyH + dy) * 4) / 4)
+                    }
+                    if (handle.includes('l')) {
+                        const rawW = initialKeyW - dx
+                        const clampedW = Math.max(0.25, Math.round(rawW * 4) / 4)
+                        const actualDx = initialKeyW - clampedW
+                        newW = clampedW
+                        newX = Math.round((initialKeyX + actualDx) * 4) / 4
+                    }
+                    if (handle.includes('t')) {
+                        const rawH = initialKeyH - dy
+                        const clampedH = Math.max(0.25, Math.round(rawH * 4) / 4)
+                        const actualDy = initialKeyH - clampedH
+                        newH = clampedH
+                        newY = Math.round((initialKeyY + actualDy) * 4) / 4
+                    }
+
+                    return { ...k, x: newX, y: newY, w: newW, h: newH, row: row(newY) }
+                }
+
+                return k
+            })
+        )
+        setDirty(true)
+    }
+
+    const handleMouseUp = () => {
+        isPanning.current = false
+        if (interactionRef.current.type) {
+            interactionRef.current.type = null
+            interactionRef.current.keyId = null
+            interactionRef.current.handle = null
+        }
     }
 
     const curkey = localKeys.find((k) => k.id === sel)
@@ -142,13 +298,18 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
 
             <div className="flex flex-1 overflow-hidden">
                 <div
-                    className="flex-1 relative bg-zinc-950 overflow-hidden cursor-default select-none"
+                    data-canvas="true"
+                    className="flex-1 relative bg-zinc-950 overflow-hidden cursor-grab active:cursor-grabbing select-none"
                     style={{
                         backgroundImage: `radial-gradient(circle, rgba(63, 63, 70, 0.25) 1px, transparent 1px)`,
                         backgroundSize: `${zoom * 1.2}px ${zoom * 1.2}px`,
                         backgroundPosition: `${pan.x}px ${pan.y}px`
                     }}
                     onWheel={(e) => setZoom((z) => Math.max(20, Math.min(100, z - e.deltaY * 0.05)))}
+                    onMouseDown={handleMouseDownCanvas}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUp}
+                    onMouseLeave={handleMouseUp}
                 >
                     <div
                         className="absolute inset-0 pointer-events-none"
@@ -165,10 +326,7 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
                                 <div
                                     key={k.id}
                                     data-key="true"
-                                    onClick={(e) => {
-                                        e.stopPropagation()
-                                        setSel(k.id)
-                                    }}
+                                    onMouseDown={(e) => handleMouseDownKey(e, k)}
                                     style={{
                                         position: 'absolute',
                                         left: `${k.x * zoom * 1.2}px`,
@@ -182,12 +340,32 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
                                         }`}
                                 >
                                     <span className="truncate pointer-events-none">{k.legend || 'key'}</span>
+                                    {act && (
+                                        <>
+                                            <div
+                                                onMouseDown={(e) => handleMouseDownResize(e, k, 'tl')}
+                                                className="absolute -top-1.5 -left-1.5 w-3 h-3 bg-zinc-100 rounded-full border border-zinc-950 cursor-nwse-resize z-25"
+                                            />
+                                            <div
+                                                onMouseDown={(e) => handleMouseDownResize(e, k, 'tr')}
+                                                className="absolute -top-1.5 -right-1.5 w-3 h-3 bg-zinc-100 rounded-full border border-zinc-950 cursor-nesw-resize z-25"
+                                            />
+                                            <div
+                                                onMouseDown={(e) => handleMouseDownResize(e, k, 'bl')}
+                                                className="absolute -bottom-1.5 -left-1.5 w-3 h-3 bg-zinc-100 rounded-full border border-zinc-950 cursor-nesw-resize z-25"
+                                            />
+                                            <div
+                                                onMouseDown={(e) => handleMouseDownResize(e, k, 'br')}
+                                                className="absolute -bottom-1.5 -right-1.5 w-3 h-3 bg-zinc-100 rounded-full border border-zinc-950 cursor-nwse-resize z-25"
+                                            />
+                                        </>
+                                    )}
                                 </div>
                             )
                         })}
                     </div>
 
-                    <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800">
+                    <div className="absolute bottom-4 left-4 flex items-center gap-1 bg-zinc-950 p-1 rounded-xl border border-zinc-800 pointer-events-auto">
                         <button
                             onClick={addkey}
                             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-zinc-900 hover:bg-zinc-800 text-[11px] font-medium transition"
