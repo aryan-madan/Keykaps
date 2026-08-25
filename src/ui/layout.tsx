@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useBoard, type Key } from '../store/board'
 import { row } from '../parse/row'
-import { FiPlus, FiTrash2, FiArrowUp, FiArrowDown, FiArrowLeft, FiArrowRight, FiX, FiMaximize2, FiChevronUp, FiChevronDown } from 'react-icons/fi'
+import { FiPlus, FiTrash2, FiArrowUp, FiArrowDown, FiArrowLeft, FiArrowRight, FiX, FiChevronUp, FiChevronDown } from 'react-icons/fi'
 
 const cats = [
     { id: 'letters', name: 'letters', keys: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('') },
@@ -283,7 +283,6 @@ export function Layout({ vis, exit }: { vis: boolean; exit: () => void }) {
         >
             <div className="flex h-12 items-center justify-between px-4 border-b border-zinc-900 bg-zinc-950">
                 <div className="flex items-center gap-2">
-                    <FiMaximize2 className="h-4 w-4 text-zinc-400" />
                     <span className="font-cherry text-lg text-zinc-100">layout editor</span>
                 </div>
                 <div className="flex items-center gap-2">

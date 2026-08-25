@@ -16,6 +16,25 @@ import {
   FiMaximize2
 } from 'react-icons/fi'
 
+function Pick({ val, onChg }: { val: string; onChg: (v: string) => void }) {
+  const ref = useRef<HTMLInputElement>(null)
+  return (
+    <div
+      onClick={() => ref.current?.click()}
+      className="flex items-center gap-2 cursor-pointer"
+    >
+      <input
+        ref={ref}
+        type="color"
+        value={val}
+        onChange={(e) => onChg(e.target.value)}
+        className="sr-only"
+      />
+      <span className="h-3.5 w-3.5 rounded-md border border-zinc-700" style={{ backgroundColor: val }} />
+    </div>
+  )
+}
+
 export function Side() {
   const [show, setShow] = useState(true)
   const [vis, setVis] = useState(true)
@@ -417,19 +436,9 @@ export function Side() {
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       case color
                     </label>
-                    <div className="flex items-center justify-between bg-zinc-900 px-3 py-1.5 rounded-xl">
-                      <span className="text-[11px] text-zinc-400">hex</span>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="color"
-                          value={kase}
-                          onChange={(e) => shell(e.target.value)}
-                          className="h-4 w-4 cursor-pointer appearance-none rounded-md bg-transparent border-0 p-0"
-                        />
-                        <span className="font-mono text-[11px] text-zinc-200">
-                          {kase}
-                        </span>
-                      </div>
+                    <div className="flex h-8 items-center justify-between bg-zinc-900 px-3 rounded-xl">
+                      <span className="font-mono text-[11px] text-zinc-200">{kase}</span>
+                      <Pick val={kase} onChg={(v) => shell(v)} />
                     </div>
                   </div>
 
@@ -523,21 +532,11 @@ export function Side() {
                         ['mods', modsbg, modsfg, setModsbg, setModsfg],
                         ['accent', accbg, accfg, setAccbg, setAccfg]
                       ].map(([label, bg, fg, setBg, setFg]) => (
-                        <div key={label as string} className="flex h-7 items-center justify-between px-2.5 rounded-lg hover:bg-zinc-800">
+                        <div key={label as string} className="flex h-7 items-center justify-between px-2.5 rounded-lg">
                           <span className="text-[11px] text-zinc-300 lowercase">{label as string}</span>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="color"
-                              value={bg as string}
-                              onChange={(e) => (setBg as (v: string) => void)(e.target.value)}
-                              className="h-3.5 w-3.5 cursor-pointer appearance-none rounded-md bg-transparent border-0 p-0"
-                            />
-                            <input
-                              type="color"
-                              value={fg as string}
-                              onChange={(e) => (setFg as (v: string) => void)(e.target.value)}
-                              className="h-3.5 w-3.5 cursor-pointer appearance-none rounded-md bg-transparent border-0 p-0"
-                            />
+                          <div className="flex items-center gap-3">
+                            <Pick val={bg as string} onChg={setBg as (v: string) => void} />
+                            <Pick val={fg as string} onChg={setFg as (v: string) => void} />
                           </div>
                         </div>
                       ))}
