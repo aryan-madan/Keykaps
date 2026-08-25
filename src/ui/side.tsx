@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback, type ChangeEvent, type DragEvent } from 'react'
 import { useBoard, type Scheme, type Saved } from '../store/board'
 import { parse } from '../parse/kle'
-import { dump } from '../parse/export'
+import { dump, glb } from '../parse/export'
 import { Layout } from './layout'
 import {
   FiMenu,
@@ -13,7 +13,9 @@ import {
   FiSliders,
   FiDroplet,
   FiLayers,
-  FiMaximize2
+  FiMaximize2,
+  FiBox,
+  FiFileText
 } from 'react-icons/fi'
 
 function Pick({ val, onChg }: { val: string; onChg: (v: string) => void }) {
@@ -35,6 +37,96 @@ function Pick({ val, onChg }: { val: string; onChg: (v: string) => void }) {
   )
 }
 
+function Modal({ close, pick }: { close: () => void; pick: (kind: 'keykap' | 'full' | 'case') => Promise<void> }) {
+  const [vis, setVis] = useState(false)
+  const [work, setWork] = useState<'keykap' | 'full' | 'case' | null>(null)
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVis(true))
+    return () => cancelAnimationFrame(raf)
+  }, [])
+
+  function exit() {
+    if (work) return
+    setVis(false)
+    setTimeout(close, 300)
+  }
+
+  async function run(kind: 'keykap' | 'full' | 'case') {
+    setWork(kind)
+    await pick(kind)
+    setWork(null)
+    setVis(false)
+    setTimeout(close, 300)
+  }
+
+  return (
+    <div
+      onClick={exit}
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/50 font-sans transition-opacity duration-300 ease-out ${vis ? 'opacity-100' : 'opacity-0'}`}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className={`w-64 rounded-2xl bg-zinc-950 border border-zinc-800/80 shadow-2xl overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${vis ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 translate-y-2'}`}
+      >
+        <div className="flex h-12 shrink-0 items-center justify-between px-3.5 pt-1">
+          <span className="font-cherry text-xl tracking-wide text-zinc-100">export</span>
+          <button
+            onClick={exit}
+            className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-400 hover:text-zinc-100 hover:bg-zinc-900 transition-colors"
+          >
+            <FiX className="h-3.5 w-3.5" />
+          </button>
+        </div>
+
+        <div className="px-3 pb-3 space-y-1">
+          <label className="text-[9px] font-medium text-zinc-500 px-1">choose format</label>
+
+          <button
+            disabled={work !== null}
+            onClick={() => run('keykap')}
+            className="flex w-full items-center gap-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 px-3 py-2.5 text-[11px] font-medium text-zinc-200 transition active:scale-[0.98] disabled:opacity-50"
+          >
+            <FiFileText className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+            <span className="flex-1 text-left">.keykap file</span>
+            {work === 'keykap' && (
+              <span className="h-3 w-3 rounded-full border-2 border-zinc-600 border-t-zinc-200 animate-spin shrink-0" />
+            )}
+          </button>
+
+          <button
+            disabled={work !== null}
+            onClick={() => run('full')}
+            className="flex w-full items-center gap-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 px-3 py-2.5 text-[11px] font-medium text-zinc-200 transition active:scale-[0.98] disabled:opacity-50"
+          >
+            <FiBox className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+            <span className="flex-1 text-left">{work === 'full' ? 'building model...' : '3d model (.glb)'}</span>
+            {work === 'full' && (
+              <span className="h-3 w-3 rounded-full border-2 border-zinc-600 border-t-zinc-200 animate-spin shrink-0" />
+            )}
+          </button>
+
+          <button
+            disabled={work !== null}
+            onClick={() => run('case')}
+            className="flex w-full items-center gap-2.5 rounded-xl bg-zinc-900 hover:bg-zinc-800 px-3 py-2.5 text-[11px] font-medium text-zinc-200 transition active:scale-[0.98] disabled:opacity-50"
+          >
+            <FiLayers className="h-3.5 w-3.5 text-zinc-400 shrink-0" />
+            <span className="flex-1 text-left">{work === 'case' ? 'building case...' : 'case only (.glb)'}</span>
+            {work === 'case' && (
+              <span className="h-3 w-3 rounded-full border-2 border-zinc-600 border-t-zinc-200 animate-spin shrink-0" />
+            )}
+          </button>
+        </div>
+
+        <div className="flex h-8 shrink-0 items-center justify-center bg-zinc-950 border-t border-zinc-900/60">
+          <span className="text-[9px] text-zinc-600 font-medium tracking-wide">glb export can take a moment</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Side() {
   const [show, setShow] = useState(true)
   const [vis, setVis] = useState(true)
@@ -42,6 +134,7 @@ export function Side() {
   const [full, setFull] = useState(false)
   const [editor, setEditor] = useState(false)
   const [edvis, setEdvis] = useState(false)
+  const [expid, setExpid] = useState<string | null>(null)
 
   const {
     mode,
@@ -133,7 +226,7 @@ export function Side() {
   function create() {
     if (!pname.trim()) return
 
-    const scheme: Scheme = {
+    const obj: Scheme = {
       id: pname.toLowerCase().replace(/\s+/g, '-'),
       label: pname,
       manufacturer: 'custom',
@@ -145,18 +238,18 @@ export function Side() {
       override: {}
     }
 
-    add(scheme)
-    apply(scheme)
+    add(obj)
+    apply(obj)
     setPname('')
   }
 
-  function download(data: object | string, filename: string) {
+  function download(data: object | string, name: string) {
     const content = typeof data === 'string' ? data : JSON.stringify(data, null, 2)
     const blob = new Blob([content], { type: 'application/json;charset=utf-8;' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = filename
+    anchor.download = name
     document.body.appendChild(anchor)
     anchor.click()
     document.body.removeChild(anchor)
@@ -209,24 +302,49 @@ export function Side() {
     reader.readAsText(file)
   }
 
-  const handleSave = useCallback(() => {
+  const save = useCallback(() => {
     if (!active) return
     commit(keys)
   }, [active, keys, commit])
 
-  const expfile = useCallback((id: string) => {
+  const snap = useCallback((id: string): Saved | null => {
     const target = boards.find((b) => b.id === id)
-    if (!target) return
-    const saved: Saved = {
+    if (!target) return null
+    return {
       id: target.id,
       name: target.name,
       keys: active === target.id ? keys : target.keys,
       case: active === target.id ? kase : target.case,
       shape: active === target.id ? shape : target.shape
     }
-    const str = dump(saved)
-    download(str, `${target.name.toLowerCase().replace(/\s+/g, '-')}.keykap`)
   }, [boards, active, keys, kase, shape])
+
+  const expfile = useCallback((id: string) => {
+    const saved = snap(id)
+    if (!saved) return
+    const str = dump(saved)
+    download(str, `${saved.name.toLowerCase().replace(/\s+/g, '-')}.keykap`)
+  }, [snap])
+
+  const expmodel = useCallback(async (id: string, kind: 'full' | 'case') => {
+    const saved = snap(id)
+    if (!saved || saved.keys.length === 0) return
+    const blob = await glb(saved, kind)
+    const url = URL.createObjectURL(blob)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `${saved.name.toLowerCase().replace(/\s+/g, '-')}.glb`
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+    URL.revokeObjectURL(url)
+  }, [snap])
+
+  async function chosen(kind: 'keykap' | 'full' | 'case') {
+    if (!expid) return
+    if (kind === 'keykap') expfile(expid)
+    else await expmodel(expid, kind)
+  }
 
   useEffect(() => {
     const keydown = (e: KeyboardEvent) => {
@@ -262,7 +380,7 @@ export function Side() {
     }, 300)
   }
 
-  const curscheme = schemes.find((s) => s.id === scheme)
+  const cur = schemes.find((s) => s.id === scheme)
 
   return (
     <>
@@ -292,6 +410,7 @@ export function Side() {
       `}</style>
 
       {editor && <Layout vis={edvis} exit={closeeditor} />}
+      {expid && <Modal close={() => setExpid(null)} pick={chosen} />}
 
       <div
         style={{
@@ -339,14 +458,14 @@ export function Side() {
                   return (
                     <button
                       key={id}
-                      onClick={() => setTab(id)}
+                      onClick={() => setTab(id as string)}
                       className={`flex items-center justify-center gap-1 rounded-lg py-1.5 text-[9px] font-medium transition-all duration-150 ${act
                         ? 'bg-zinc-100 text-zinc-950 font-semibold'
                         : 'text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
                         }`}
                     >
                       <Icon className="h-3 w-3" />
-                      <span>{label}</span>
+                      <span>{label as string}</span>
                     </button>
                   )
                 })}
@@ -446,9 +565,9 @@ export function Side() {
                     <label className="text-[9px] font-medium text-zinc-500 px-1">
                       active brush
                     </label>
-                    {curscheme ? (
+                    {cur ? (
                       <div className="bg-zinc-900 rounded-xl p-1 space-y-0.5">
-                        {Object.entries(curscheme.swatches).map(([name, swatch]) => {
+                        {Object.entries(cur.swatches).map(([name, swatch]) => {
                           const act = brush.name === name
                           return (
                             <button
@@ -654,7 +773,7 @@ export function Side() {
                               {act && (
                                 <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                                   <button
-                                    onClick={() => expfile(b.id)}
+                                    onClick={() => setExpid(b.id)}
                                     className="flex h-6 w-6 items-center justify-center rounded-lg text-zinc-800 hover:text-zinc-950 hover:bg-zinc-200 transition"
                                     title="export layout"
                                   >
@@ -681,7 +800,7 @@ export function Side() {
 
             <div className={`absolute bottom-10 left-0 right-0 py-1.5 flex justify-center transition-all duration-200 pointer-events-none ${dirty && active ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}>
               <button
-                onClick={handleSave}
+                onClick={save}
                 className="pointer-events-auto flex items-center gap-1.5 px-2.5 py-0.5 rounded-md bg-zinc-900 hover:bg-zinc-800 border border-zinc-800/80 text-[10px] text-zinc-300 hover:text-zinc-100 font-medium transition-all shadow-lg"
               >
                 <span>unsaved changes</span>
